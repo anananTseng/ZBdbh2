@@ -1,770 +1,497 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>竹北市代表會 監督儀表板</title>
-
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-  <style>
-    /* 防拷貝機制 */
-    body { 
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-      background-color: #f4f7f6; 
-      color: #333; 
-      margin: 0; 
-      padding: 0; 
-      line-height: 1.6;
-      -webkit-user-select: none;
-      -moz-user-select: none;
-      -ms-user-select: none;
-      user-select: none;
-    }
-
-    header { background-color: #2c3e50; color: white; padding: 20px; text-align: center; position: relative; }
-    header h1 { margin: 0; font-size: 1.5em; letter-spacing: 1px; }
-    .nav-buttons { margin-top: 15px; }
-    .nav-buttons button { background: transparent; border: 1px solid white; color: white; padding: 6px 15px; margin: 0 5px; border-radius: 4px; cursor: pointer; transition: background 0.3s; }
-    .nav-buttons button:hover { background: rgba(255,255,255,0.2); }
-
-    .container { max-width: 900px; margin: 20px auto; padding: 0 15px; }
-
-    .dashboard-section { background: white; padding: 25px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-    .filter-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
-    .filter-row input, .filter-row select { flex: 1; min-width: 130px; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 1em; background-color: #fafafa; transition: border 0.3s; }
-    .filter-row input:focus, .filter-row select:focus { border-color: #3498db; outline: none; }
-    optgroup { font-weight: bold; color: #2c3e50; }
-
-    /* 清單資訊列 */
-    .list-meta { display: flex; justify-content: flex-start; align-items: center; margin-bottom: 20px; padding: 0 5px; gap: 15px; }
-    #filteredCount { color: #7f8c8d; font-weight: 500; font-size: 0.95em; }
-    .clear-btn { background: none; border: none; color: #95a5a6; cursor: pointer; font-size: 13px; transition: color 0.3s; padding: 0; font-weight: bold; }
-    .clear-btn:hover { color: #e74c3c; }
-
-    .chart-container { position: relative; height: 280px; width: 100%; display: none; margin-bottom: 25px; cursor: pointer; }
-
-    /* 戰力總結區塊優化 */
-    #localAnalysisBox { display: none; background: #fff; padding: 25px; border-radius: 12px; border-left: 6px solid #1abc9c; box-shadow: 0 4px 15px rgba(0,0,0,0.06); margin-bottom: 20px; }
-    #localAnalysisBox h4 { margin-top: 0; margin-bottom: 20px; color: #16a085; font-size: 1.4em; display: flex; align-items: center; gap: 8px; border-bottom: 2px solid #f0f3f4; padding-bottom: 12px; }
-
-    /* 數據網格設計 */
-    .summary-grid { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
-    .stat-box { flex: 1; min-width: 110px; background: #f8f9f9; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #e5e8e8; position: relative; }
-    .stat-num { display: block; font-size: 2.2em; font-weight: bold; color: #2c3e50; line-height: 1; margin-bottom: 5px; }
-    .stat-label { font-size: 0.9em; color: #7f8c8d; font-weight: 500; }
-
-    /* 懸浮提示框 (Tooltip) */
-    .tooltip { position: relative; display: inline-block; cursor: help; font-size: 0.45em; vertical-align: super; color: #e67e22; margin-left: 4px; }
-    .tooltip .tooltip-text {
-      visibility: hidden; width: 220px; background-color: #34495e; color: #fff; text-align: left;
-      border-radius: 6px; padding: 12px; position: absolute; z-index: 100; bottom: 130%; left: 50%;
-      transform: translateX(-50%); opacity: 0; transition: opacity 0.3s; font-size: 13px; font-weight: normal; line-height: 1.5; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-    }
-    .tooltip .tooltip-text::after {
-      content: ""; position: absolute; top: 100%; left: 50%; margin-left: -5px; border-width: 5px; border-style: solid; border-color: #34495e transparent transparent transparent;
-    }
-    .tooltip:hover .tooltip-text { visibility: visible; opacity: 1; }
-
-    /* 條列式重點 */
-    .summary-details { margin-bottom: 20px; font-size: 1.05em; color: #34495e; line-height: 1.8; }
-    .summary-details span { font-weight: bold; color: #2c3e50; }
-
-    /* 風格評析獨立卡片 */
-    .summary-style-box { background: #fdfefe; border: 1px solid #eaeded; border-radius: 8px; padding: 15px 20px; margin-bottom: 15px; border-left: 4px solid #f39c12; }
-    .summary-style-box strong { display: block; color: #d35400; margin-bottom: 8px; font-size: 1.05em; }
-    .summary-style-box p { margin: 0; color: #555; line-height: 1.6; font-size: 1em; }
-
-    .disclaimer { font-size: 0.7em; color: #95a5a6; margin-top: 12px; display: block; border-top: 1px dashed #eee; padding-top: 8px; line-height: 1.4; }
-    .inline-disclaimer { font-size: 0.75em; color: #95a5a6; font-weight: normal; letter-spacing: 0; }
-
-    /* 卡片與逐案短評 */
-    .card { background: white; padding: 20px 25px; margin-bottom: 20px; border-radius: 10px; box-shadow: 0 3px 8px rgba(0,0,0,0.04); border-left: 5px solid #3498db; transition: transform 0.2s; }
-    .card:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.08); }
-    .card h3 { margin-top: 0; color: #2c3e50; font-size: 1.25em; line-height: 1.4; }
-    .info-row { margin: 8px 0; font-size: 1em; color: #444; }
-    
-    .depth-comment { background:#fdf2e9; padding:10px 12px; border-radius:6px; margin-top:12px; border-left:3px solid #e67e22; font-size:0.95em; color:#555; }
-    .depth-comment strong { color:#d35400; font-weight:bold; }
-
-    .tag { display: inline-block; background: #e0f7fa; color: #00838f; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; margin-right: 6px; margin-top: 10px; }
-    
-    .action-buttons { margin-top: 18px; display: flex; gap: 10px; flex-wrap: wrap; }
-    .btn-primary, .btn-secondary { display: inline-block; text-decoration: none; padding: 8px 16px; border-radius: 5px; font-size: 13.5px; cursor: pointer; transition: background 0.3s, opacity 0.3s; border: none; font-weight: 500; }
-    .btn-primary { background-color: #3498db; color: white; }
-    .btn-primary:hover { background-color: #2980b9; }
-    .btn-secondary { background-color: #16a085; color: white; }
-    .btn-secondary:hover { opacity: 0.9; }
-    
-    .loading { text-align: center; font-size: 1.1em; color: #7f8c8d; padding: 40px; }
-
-    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
-    .modal-content { background: white; padding: 30px; border-radius: 12px; max-width: 550px; width: 90%; position: relative; text-align: left; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-    .close-btn { position: absolute; top: 15px; right: 20px; font-size: 1.5em; cursor: pointer; color: #95a5a6; transition: color 0.2s; }
-    .close-btn:hover { color: #34495e; }
-    .ai-links { display: flex; justify-content: center; gap: 15px; margin-top: 20px; }
-    .ai-link-btn { padding: 10px 20px; text-decoration: none; color: white; border-radius: 5px; font-weight: bold; text-align: center; }
-    .gemini-btn { background-color: #1a73e8; }
-    .chatgpt-btn { background-color: #10a37f; }
-  
-    /* v11 統計視覺化 */
-    .v11-wrap{background:#fff;padding:22px;border-radius:14px;margin-bottom:18px;box-shadow:0 4px 15px rgba(0,0,0,.05)}
-    .v11-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}
-    .v11-head h2{margin:0;color:#243746;font-size:1.25rem}
-    .v11-intro{color:#667784;font-size:.92rem;margin:8px 0 16px}
-    .v11-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
-    .v11-tabs button{border:1px solid #ccd5dc;background:#f7f9fb;color:#34495e;padding:9px 13px;border-radius:8px;cursor:pointer}
-    .v11-tabs button.active{background:#2c3e50;color:#fff;border-color:#2c3e50}
-    .v11-chartbox{height:390px;position:relative;margin:12px 0}
-    .v11-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin:12px 0}
-    .v11-kpi{border:1px solid #e5eaee;border-radius:10px;padding:12px;background:#fbfcfd}
-    .v11-kpi b{display:block;font-size:1.35rem;color:#2c3e50}
-    .v11-kpi span{font-size:.82rem;color:#697987}
-    .v11-note{font-size:.82rem;color:#7b8790;line-height:1.6;border-top:1px solid #edf0f2;padding-top:10px}
-    @media(max-width:600px){.v11-chartbox{height:330px}.v11-wrap{padding:15px}}
-
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>竹北市代表會｜議事監督資料庫（ChatGPT版）</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root{color-scheme:light;--ink:#182b3a;--muted:#647586;--line:#dce5eb;--paper:#f3f6f8;--card:#fff;--field:#fff;--soft:#f5fafb;--kpi:#fbfdfe;--pill:#eaf3f6;--pill-ink:#24576a;--comment:#fff8ed;--blue:#176b87;--teal:#187f72;--gold:#b7791f;--red:#a94442;--proposal-bg:#f0f8f5;--question-bg:#f0f6fb;--proposal-edge:#187f72;--question-edge:#176b87}
+:root[data-theme="dark"]{color-scheme:dark;--ink:#f0f3f5;--muted:#b0bec8;--line:#394752;--paper:#101418;--card:#181e23;--field:#20272d;--soft:#202a30;--kpi:#1d252b;--pill:#283b43;--pill-ink:#d2e9ef;--comment:#30291e;--blue:#77c5df;--teal:#73d1bd;--gold:#e2b76e;--red:#e9a2a0;--proposal-bg:#192a26;--question-bg:#1b2732;--proposal-edge:#73d1bd;--question-edge:#77c5df}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI","Noto Sans TC",sans-serif;line-height:1.65}
+header{background:linear-gradient(120deg,#183b50,#176b87);color:white;padding:28px 18px 24px}header button.secondary{background:#fff;color:#183b50;border:1px solid #d7e5ec}
+.head-inner,.container{max-width:1180px;margin:auto}
+.eyebrow{font-size:.78rem;letter-spacing:.12em;opacity:.8}
+h1{margin:4px 0 6px;font-size:clamp(1.5rem,3vw,2.15rem);line-height:1.3}
+.subtitle{margin:0;color:#e3eef3;font-size:.94rem}
+header .top-note{margin-top:14px;font-size:.8rem;color:#d3e6ed}
+.container{padding:22px 16px 50px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:18px;box-shadow:0 5px 18px rgba(21,49,66,.04)}
+.filter-grid{display:grid;grid-template-columns:1.2fr .8fr .8fr 1.4fr;gap:10px}
+input,select{width:100%;padding:11px 12px;border:1px solid #cbd7df;border-radius:9px;background:var(--field);color:var(--ink);font:inherit;min-width:0}
+input:focus,select:focus{outline:2px solid #a5d7e4;border-color:var(--blue)}
+.row-between{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.count{font-weight:700;color:var(--blue);font-size:.95rem}
+button,.button{border:0;border-radius:8px;padding:9px 13px;background:var(--blue);color:white;font:inherit;font-size:.9rem;text-decoration:none;cursor:pointer}
+button.secondary,.button.secondary{background:var(--soft);color:var(--ink);border:1px solid var(--line)}
+button:hover,.button:hover{filter:brightness(.96)}
+.small{font-size:.82rem;color:var(--muted)}
+h2{font-size:1.18rem;margin:0 0 13px}
+h3{font-size:1.05rem;margin:0 0 10px;line-height:1.45}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.kpi{border:1px solid var(--line);border-radius:12px;padding:15px;background:var(--kpi)}
+.kpi .num{display:block;font-size:1.8rem;line-height:1.2;font-weight:750;color:var(--blue);overflow-wrap:anywhere}
+.kpi .label{font-size:.82rem;color:var(--muted)}
+.analysis-grid{display:grid;grid-template-columns:1fr 1.1fr;gap:16px}
+.dashboard-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.chart-panel{border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--kpi);min-width:0}
+.chart-panel .chart-wrap{height:330px}
+.score-legend{display:flex;gap:12px;flex-wrap:wrap;font-size:.78rem;color:var(--muted);margin:6px 0 12px}
+.score-legend span{display:inline-flex;align-items:center;gap:5px}
+.legend-dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+.chart-wrap{height:300px;position:relative}
+.summary-copy{background:var(--soft);border-radius:10px;padding:14px}
+.summary-copy p{margin:6px 0}
+.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:16px}
+.case-card{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--blue);border-radius:13px;padding:17px;min-width:0}.case-card.type-proposal{background:var(--proposal-bg);border-left-color:var(--proposal-edge)}.case-card.type-question{background:var(--question-bg);border-left-color:var(--question-edge)}.case-card.share-target{outline:3px solid var(--gold);box-shadow:0 0 0 5px color-mix(in srgb,var(--gold) 18%,transparent)}
+.case-card .meta{display:flex;gap:7px;flex-wrap:wrap;margin:8px 0 12px}
+.pill{display:inline-block;padding:3px 8px;border-radius:999px;background:var(--pill);color:var(--pill-ink);font-size:.76rem}
+.field{margin:8px 0;font-size:.91rem;overflow-wrap:anywhere}
+.field b{color:var(--muted)}
+.comment{background:var(--comment);border-left:3px solid var(--gold);border-radius:6px;padding:10px 12px;margin-top:12px;font-size:.88rem}
+.score-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:10px}
+.score-chip{border:1px solid var(--line);background:var(--soft);border-radius:8px;padding:8px 10px;font-size:.82rem}
+.score-chip strong{display:block;font-size:.95rem;color:var(--blue)}
+.score-note{font-size:.82rem;color:var(--muted);margin-top:8px}
+.method-note{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-top:14px;font-size:.86rem;color:#40596a}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.empty,.loading{padding:35px 12px;text-align:center;color:var(--muted)}
+footer{max-width:1180px;margin:auto;padding:0 16px 35px;color:var(--muted);font-size:.78rem}
+.disclaimer{border-top:1px solid var(--line);padding-top:12px;margin-top:18px}
+.hidden{display:none!important}
+.compare-open{font-weight:700;padding:12px 18px}
+.modal-backdrop{position:fixed;inset:0;background:rgba(8,18,27,.68);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px}
+.compare-modal{width:min(1120px,100%);max-height:92vh;overflow:auto;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:0 24px 70px rgba(0,0,0,.3)}
+.modal-head{position:sticky;top:-20px;background:var(--card);z-index:2;padding:8px 0 12px;display:flex;justify-content:space-between;gap:10px;align-items:center;border-bottom:1px solid var(--line)}
+.compare-layout{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(280px,.8fr);gap:16px;margin-top:16px}
+.compare-chart{height:460px;position:relative}.compare-detail{background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:14px;min-width:0}
+.detail-dim{display:grid;grid-template-columns:1fr auto;gap:7px;border-bottom:1px solid var(--line);padding:9px 0}.detail-dim:last-child{border:0}
+.case-evidence{border:1px solid var(--line);border-radius:9px;padding:10px;margin-top:9px;background:var(--card)}
+@media(max-width:800px){.compare-layout{grid-template-columns:1fr}.compare-chart{height:360px}.modal-backdrop{padding:6px}.compare-modal{padding:12px;max-height:96vh}}
+@media(max-width:800px){.filter-grid{grid-template-columns:1fr 1fr}.kpis{grid-template-columns:1fr 1fr}.analysis-grid,.dashboard-grid{grid-template-columns:1fr}.cards{grid-template-columns:1fr}}
+@media(max-width:480px){.filter-grid{grid-template-columns:1fr}.panel{padding:15px}.container{padding:14px 10px 35px}.kpi .num{font-size:1.55rem}}
+</style>
 </head>
-<body oncontextmenu="return false;" oncopy="return false;" oncut="return false;">
-
-  <header>
-    <h1>竹北市代表會 監督儀表板</h1>
-    <div class="nav-buttons">
-      <button onclick="openModal('guideModal')">操作指南</button>
-      <button onclick="openModal('aboutModal')">關於本站與聲明</button>
+<body>
+<header><div class="head-inner">
+  <div class="eyebrow">PUBLIC OVERSIGHT · INDEPENDENT DATASET</div>
+  <h1>竹北市代表會｜議事監督資料庫</h1>
+  <p class="subtitle">以案件為單位整理提案與市政質詢，從議題、監督表現與政府回應三個面向，讓公開議事資料更容易理解、比較與追蹤。</p>
+  <div class="row-between" style="justify-content:flex-start;margin-top:12px;flex-wrap:wrap"><button id="themeToggle" class="secondary" type="button" aria-label="切換黑白底色">切換黑底</button><a class="secondary" href="#userGuide">操作指南</a><a class="secondary" href="#siteStatement">網站聲明</a><span class="top-note" style="margin-top:0">ChatGPT版獨立資料庫｜與既有 Gemini 版分開運作</span></div>
+</div></header>
+<main class="container">
+  <section class="panel">
+    <div class="filter-grid">
+      <select id="repFilter"><option value="">所有代表</option></select>
+      <select id="typeFilter"><option value="">所有案件類型</option><option value="質詢">市政質詢</option><option value="提案">正式提案</option></select>
+      <select id="sortFilter"><option value="desc">日期：新到舊</option><option value="asc">日期：舊到新</option></select>
+      <input id="searchInput" type="search" placeholder="搜尋會期、日期、議題、地點、代表、標籤…">
     </div>
-  </header>
+    <div class="row-between" style="margin-top:13px">
+      <span id="count" class="count">正在載入資料…</span>
+      <button id="clearBtn" class="secondary" type="button">清除篩選</button>
+    </div>
+  </section>
 
-  <div class="container">
-    <section class="v11-wrap" id="statisticsOverview">
-      <div class="v11-head"><h2>📊 代表監督表現｜總體比較</h2><span style="font-size:.8rem;color:#77838c">第十屆・統計視覺化</span></div>
-      <p class="v11-intro">先選擇比較角度，再點選圖表中的代表姓名，即可跳至該代表的案件資料。全體名單均納入；無紀錄者以「資料不足」標示，不以零分直接定性。</p>
-      <div class="v11-tabs" id="v11Tabs">
-        <button class="active" data-mode="quality">品質比較</button><button data-mode="volume">案件量／參與比較</button><button data-mode="combined">三層綜合比較</button>
+  <section id="userGuide" class="panel">
+    <details><summary><strong>操作指南｜如何閱讀與使用本網站</strong></summary>
+      <div class="method-note">
+        <p><strong>1. 全體代表總體比較</strong>：開啟「20席｜全部案件總體比較」，預設比較正式提案與市政質詢的全部收錄案件。圖表點選代表，可檢視原始平均、樣本調整分數、有效案件數及個案評分依據。</p>
+        <p><strong>2. 篩選案件</strong>：可依代表、案件類型、日期排序或關鍵字查詢會期、議題、地點及案件內容。</p>
+        <p><strong>3. 閱讀分數</strong>：分數以案件品質為核心；提案依書面問題界定、證據及訴求具體度評估。質詢亦以三項品質指標為主，追問監督只作額外加分，不是必要條件。</p>
+        <p><strong>4. 理解樣本調整</strong>：有效評分案件較少者，排名分數會向同類比較的整體平均適度收縮，以降低少量高分造成的偏差。請同時看原始平均及有效案件數。</p>
+        <p><strong>5. 完整席次</strong>：網站固定列出20席代表。主席林啟賢主要主持會議，不以一般代表的口頭質詢次數衡量；無紀錄或不適用的項目不強行給分。</p>
+        <p><strong>6. 核對原始資料</strong>：AI摘要及評分可供快速閱讀，重要判斷請點開原始文書自行核對。</p>
       </div>
-      <div class="v11-kpis" id="v11Kpis"></div>
-      <div class="v11-chartbox"><canvas id="v11CompareChart"></canvas></div>
-      <div class="v11-note" id="v11MethodNote">評分為既有摘要資料之參考指標；案件數與案件品質分開閱讀。資料量較少的代表，評分解讀需保留。</div>
+    </details>
+  </section>
+  <section id="siteStatement" class="panel">
+    <details><summary><strong>網站聲明｜資料範圍、評分限制與使用原則</strong></summary>
+      <div class="method-note">
+        <p>本網站整理竹北市民代表會公開議事文件，使用 AI 輔助摘要、分類與評估，目的在於提升公開資料的可讀性與可比較性，並非官方評鑑或對代表整體能力、人格及服務成果的定論。</p>
+        <p>資料涵蓋範圍受已取得的公開文件及其記載內容限制。未收錄、未記載或無法評估，不代表代表未曾服務、私下追蹤或履行職責。主席主持會議的職務性質與一般代表口頭質詢不同，相關數據不宜直接類比。</p>
+        <p>分數僅依文件中可辨識的監督品質評估；樣本數收縮為統計上的排名穩定調整，並非能力真值。追問監督為質詢的額外加分項，提案不適用。政府答覆品質、承諾與實際履約另行觀察，不直接替代表加減分。</p>
+        <p>AI可能發生辨識、摘要、姓名匹配、分類或評分錯誤。共同提案、姓名別稱及文書格式亦可能影響統計。網站內容不取代原始文書，任何錯誤或補充均應以可核對資料為依據。</p>
+      </div>
+    </details>
+  </section>
+  <section id="overview" class="panel hidden">
+    <div class="row-between"><div><h2>全體代表監督概況｜全部案件</h2><p class="small">以全部案件作為預設比較，先看20席代表的公開監督紀錄，再點選代表檢視評分與個案依據。</p></div><button id="openCompare" class="compare-open" type="button">查看20席｜全部案件總體比較</button></div>
+    <div class="kpis" style="margin-top:14px">
+      <div class="kpi"><span class="num" id="totalCases">—</span><span class="label">收錄案件紀錄</span></div>
+      <div class="kpi"><span class="num" id="totalQ">—</span><span class="label">市政質詢</span></div>
+      <div class="kpi"><span class="num" id="totalP">—</span><span class="label">正式提案</span></div>
+      <div class="kpi"><span class="num" id="repCount">20</span><span class="label">代表席次（完整名冊）</span></div>
+      <div class="kpi"><span class="num" id="repCoverage">—</span><span class="label">有公開紀錄代表</span></div>
+      <div class="kpi"><span class="num" id="noRecordCount">—</span><span class="label">尚無收錄紀錄</span></div>
+    </div>
+  </section>
+
+  <div id="compareBackdrop" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="compareTitle">
+    <section class="compare-modal">
+      <div class="modal-head"><div><h2 id="compareTitle">代表監督表現｜總體比較</h2><p class="small">點選圖表中的代表，可查看分數組成、樣本數與案件依據。分數不等於代表全部服務能力。</p></div><button id="closeCompare" class="secondary" type="button">關閉</button></div>
+      <div class="row-between" style="margin-top:14px;gap:10px;flex-wrap:wrap"><label for="compareMode" class="small">比較指標</label><select id="compareMode" style="max-width:280px"><option value="quality">品質比較（樣本調整）</option><option value="volume">案件量／參與比較</option><option value="combined">三層綜合比較（品質・參與・追問加分）</option></select><label for="compareType" class="small">案件類型</label><select id="compareType" style="max-width:240px"><option value="all" selected>全部案件（首頁預設）</option><option value="質詢">市政質詢（口頭監督）</option><option value="提案">正式提案（書面評估）</option></select></div>
+      <div class="compare-layout"><div class="chart-panel"><div class="compare-chart"><canvas id="interactiveCompareChart"></canvas></div><p class="small">圖表可點選代表。品質分數為主，追問監督只作額外加分；樣本數收縮降低少量高分樣本的排名不穩定。無公開紀錄者仍列入完整名冊，但不虛構分數。</p></div>
+      <aside id="compareDetail" class="compare-detail"><h3>選擇一位代表</h3><p class="small">右側將說明其分數如何形成，以及哪些案件提供了評分依據。</p></aside></div>
+      <div class="method-note"><strong>評分規則摘要：</strong>提案與質詢均以問題界定（25%）、證據準備（30%）、具體訴求（45%）為品質核心；質詢的追問監督僅作額外加分（最高 +0.30/5），不是必要條件。提案不適用追問加分。官員承諾與政府回覆品質獨立呈現，不加減代表分數。資料未載明，不推定未做。</div>
     </section>
-
-    <div class="dashboard-section">
-      <div class="filter-row">
-        <select id="repFilter" style="flex: 1 1 180px;"></select>
-        <select id="typeFilter" style="flex: 0 1 140px;">
-          <option value="">📂 所有類別</option>
-          <option value="質詢">質詢</option>
-          <option value="提案">提案</option>
-        </select>
-        <!-- 預設改為由舊到新 -->
-        <select id="sortFilter" style="flex: 0 1 110px; padding: 10px 5px;">
-          <option value="asc" selected>📅 由舊到新</option>
-          <option value="desc">📅 由新到舊</option>
-        </select>
-        <input type="text" id="searchInput" placeholder="🔍 搜尋 (例: 公園)..." style="flex: 2 1 150px;">
-      </div>
-
-      <div class="list-meta">
-        <span id="filteredCount"></span>
-        <button id="clearFilterBtn" class="clear-btn" onclick="clearAllFilters()" title="還原所有條件" style="display:none;">↺ 清空篩選</button>
-      </div>
-
-      <div class="chart-container" id="chartWrapper">
-        <div id="innerChartLegend" style="position: absolute; left: 0px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.85); padding: 10px 12px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); pointer-events: none; z-index: 10;">
-          <div id="legend-item-q" style="display: flex; align-items: center; margin-bottom: 8px; transition: opacity 0.3s;">
-            <span style="display:inline-block; width:14px; height:14px; background-color:rgba(220, 20, 60, 0.85); border-radius:3px; margin-right:8px;"></span>
-            <span style="font-size: 13px; font-weight:bold; color:#2c3e50;">市政質詢</span>
-          </div>
-          <div id="legend-item-p" style="display: flex; align-items: center; transition: opacity 0.3s;">
-            <span style="display:inline-block; width:14px; height:14px; background-color:rgba(21, 67, 96, 0.85); border-radius:3px; margin-right:8px;"></span>
-            <span style="font-size: 13px; font-weight:bold; color:#2c3e50;">正式提案</span>
-          </div>
-        </div>
-        <canvas id="topicChart"></canvas>
-      </div>
-
-      <div id="localAnalysisBox">
-        <h4>📊 系統戰力總評</h4>
-        <div id="localAnalysisText"></div>
-      </div>
-    </div>
-
-    <div id="data-container">
-      <div class="loading">📡 正在拉取資料，請稍候...</div>
-    </div>
   </div>
-
-  <!-- 彈出視窗：AI 追蹤 -->
-  <div class="modal-overlay" id="aiModal" onclick="closeModal(event, 'aiModal')">
-    <div class="modal-content" onclick="event.stopPropagation()" style="text-align: center;">
-      <span class="close-btn" onclick="document.getElementById('aiModal').style.display='none'">&times;</span>
-      <h2>✅ 指令已複製！</h2>
-      <p style="color:#555;">請點擊下方按鈕前往常用的 AI 平台，<br>在對話框中貼上指令，即可搜尋案件最新進度。</p>
-      <div class="ai-links">
-        <a href="https://gemini.google.com/" target="_blank" class="ai-link-btn gemini-btn">開啟 Gemini</a>
-        <a href="https://chatgpt.com/" target="_blank" class="ai-link-btn chatgpt-btn">開啟 ChatGPT</a>
-      </div>
+  <section id="repPanel" class="panel hidden">
+    <div class="row-between"><h2 id="repHeading">代表問政概況</h2><span class="small">數量是資料庫紀錄，不等同問政品質或案件成效。</span></div>
+    <div class="kpis" style="margin-bottom:16px">
+      <div class="kpi"><span class="num" id="repP">—</span><span class="label">正式提案</span></div>
+      <div class="kpi"><span class="num" id="repQ">—</span><span class="label">市政質詢</span></div>
+      <div class="kpi"><span class="num" id="repAvg">—</span><span class="label">代表監督表現平均（AI評估）</span></div>
+      <div class="kpi"><span class="num" id="repIssues">—</span><span class="label">主要關注議題</span></div>
     </div>
-  </div>
-
-  <!-- 彈出視窗：操作指南 -->
-  <div class="modal-overlay" id="guideModal" onclick="closeModal(event, 'guideModal')">
-    <div class="modal-content" onclick="event.stopPropagation()">
-      <span class="close-btn" onclick="document.getElementById('guideModal').style.display='none'">&times;</span>
-      <h2 style="color:#2c3e50; margin-top:0; border-bottom: 2px solid #eee; padding-bottom: 10px;">📖 操作指南</h2>
-      <ul style="line-height: 1.8; color:#444; padding-left: 20px;">
-        <li><strong>戰力速寫與評分：</strong>選擇民意代表後，系統會自動產出包含「案件總量」、「核心議題焦點」、「綜合監督評分」與質化風格評析的完整總結。（若該代表無實質紀錄，將觸發系統警示）。</li>
-        <li><strong>逐案深度檢驗：</strong>每一張提案或質詢卡片下方，皆有專屬的「🧐 議事評析」。系統會客觀檢驗代表在該案是否有提出具體訴求、實地會勘或數據佐證。</li>
-        <li><strong>聚光燈圖表篩選：</strong>點擊圓環的任一市政區塊或左側內圈的「質詢/提案」，該區塊與圖例會保持亮起，下方的資料清單將瞬間為您自動精準篩選。</li>
-        <li><strong>進度追蹤：</strong>點擊卡片下方的「🔍 AI 追蹤最新進度」，即可快速複製指令交由外部 AI 搜尋該案件的後續執行狀況與新聞。</li>
-      </ul>
+    <div class="analysis-grid">
+      <div><h3>案件議題分布</h3><div class="chart-wrap"><canvas id="topicChart"></canvas></div></div>
+      <div class="summary-copy"><h3>資料摘要</h3><div id="repSummaryText"><p>選擇代表後顯示摘要。</p></div></div>
     </div>
+    <div class="chart-panel" style="margin-top:16px"><h3>監督品質指標與追問加分輪廓</h3><p class="small">前三項為品質核心；追問監督僅作質詢額外加分參考。各項只計入有評分案件，未評估不視為0分。</p><div class="chart-wrap"><canvas id="repRadarChart"></canvas></div></div>
+    <div class="method-note"><strong>評分規則：</strong>代表監督表現以「問題界定 25%、證據準備 30%、具體訴求 45%」作為品質核心；質詢的追問監督僅作額外加分，最高 +0.30/5，不是必要條件；提案不適用追問加分。文件無法評估的品質項目不納入該案分數。政府回應品質、官員承諾及履約情形另行呈現，不直接加減代表分數。代表是否積極要求說明、期限、責任單位、書面資料或驗收方式，才反映在追問監督評分中。文件未記載後續追蹤，不代表代表沒有追蹤；政府承諾也不等於已履行。分數只反映公開文件中可見的監督表現，不等於代表整體服務或案件最終成效。</div>
+  </section>
+
+  <section class="panel">
+    <div class="row-between"><h2>案件清單</h2><span class="small">提案為綠色系、質詢為藍色系；可切換黑底或白底</span></div>
+    <div id="data-container"><div class="loading">正在讀取獨立資料庫…</div></div>
+  </section>
+</main>
+<footer>
+  <div class="disclaimer">
+    <strong>資料使用說明：</strong>資料由公開議事文件經 AI 輔助整理，可能有辨識、分類或摘要誤差；請點選原始文書核對。共同提案可能按提案人分列，因此各代表參與紀錄相加不等於不重複案件總數。代表分數以文件中可見的問題界定、證據準備、具體訴求為品質核心，質詢追問監督僅作額外加分；政府回應品質、官員承諾及履約情形獨立呈現，不直接加減代表分數。不能僅憑一份文件推斷代表沒有做過其他追蹤，也不能把政府承諾直接當成執行成果。對口單位及議題分類可能為系統推估。
   </div>
-
-  <!-- 彈出視窗：關於本站與聲明 -->
-  <div class="modal-overlay" id="aboutModal" onclick="closeModal(event, 'aboutModal')">
-    <div class="modal-content" onclick="event.stopPropagation()">
-      <span class="close-btn" onclick="document.getElementById('aboutModal').style.display='none'">&times;</span>
-      <h2 style="color:#2c3e50; margin-top:0; border-bottom: 2px solid #eee; padding-bottom: 10px;">📌 關於本站與聲明</h2>
-      
-      <ul style="line-height: 1.8; color:#444; padding-left: 20px;">
-        <li><strong>資料來源：</strong>原始文本皆自動擷取自竹北市公所與代表會官方網站（收錄：<strong>第十屆代表任期迄今</strong>）。本站由 AI 技術輔助生成，僅供研究參考，若有疑漏請以官方為準。</li>
-        <li><strong>排版原則：</strong>為求簡潔，清單僅保留主提案人；「對口單位」為系統依語意推估，實際權責依縣府或相關單位辦理。</li>
-      </ul>
-
-      <h3 style="color:#2c3e50; font-size:1.1em; margin-top:20px; margin-bottom:5px;">⚖️ AI 評析與計分標準</h3>
-      <ul style="line-height: 1.8; color:#444; padding-left: 20px; margin-top:0;">
-        <li><strong>綜合評分：</strong>依據「提案量(35%) ＋ 質詢量(35%) ＋ 逐案問政深度(30%)」交叉演算。</li>
-        <li><strong>分數級距：</strong>80分以上(頂標)、60-79分(前段班)、40-59分(中段班)、20-39分(中後段班)、20分以下(末段班)。</li>
-      </ul>
-
-      <div style="background: #e8f8f5; padding: 12px; border-radius: 6px; margin-top: 20px; color: #16a085; font-weight: bold; text-align: center; font-size: 0.95em;">
-        📢 站長倡議：要求推動議事「全程直播」，讓民主監督真正落實！
-      </div>
-    </div>
-  </div>
-
-  <script>
-    const apiUrl = 'https://script.google.com/macros/s/AKfycbwLJ_8VAs2KLLpKNSkZN56rYBAPpySfqYa4spszsrLX8VqJlXPS-NkPKrbnZLhI5yA/exec';
-
-    let allData = [];
-    let summaryData = []; 
-    let topicChartInstance = null;
-    let currentChartCategoryFilter = ''; 
-
-    const categoryColorMap = {
-      "交通建設與路平": "rgba(52, 152, 219, 0.9)",
-      "公園綠地與休閒": "rgba(46, 204, 113, 0.9)",
-      "環境清潔與衛生": "rgba(26, 188, 156, 0.9)",
-      "社會福利與救助": "rgba(241, 196, 15, 0.9)",
-      "教育與幼兒照護": "rgba(230, 126, 34, 0.9)",
-      "公共工程與場館": "rgba(52, 73, 94, 0.9)",
-      "藝文觀光與節慶": "rgba(155, 89, 182, 0.9)",
-      "民政與社區發展": "rgba(149, 165, 166, 0.9)",
-      "財政與主計稅務": "rgba(231, 76, 60, 0.9)",
-      "綜合行政與人事": "rgba(189, 195, 199, 0.9)"
-    };
-
-    fetch(apiUrl)
-      .then(response => response.json())
-      .then(data => {
-        allData = (data.records || []).filter(item => {
-          const repField = item['推動代表與團隊'] || item['推動代表與团队'] || '';
-          return !repField.includes('市長');
-        });
-        summaryData = data.summaries || [];\n        v11Render();
-        populateRepDropdown(allData);
-        filterData(); 
-      })
-      .catch(error => {
-        document.getElementById('data-container').innerHTML = '<div class="loading" style="color: #e74c3c;">資料載入失敗，請檢查網址或稍後再試。</div>';
-      });
-
-    
-    // v11 三種統計視角，以既有 API summaries 為資料來源
-    const v11Roster = [
-      "戴佩如","彭竣志","范格菱","張美珠","曾玉菱","林維洲","陳秀玲","林祺烜","陳禹同",
-      "林啟賢主席","何宜芯","鄭建村","游雅婷","曾美琴","徐水鐘","邵啟月",
-      "葉信輝副主席","鄭慶源","曾祐宸","蔡文苑"
-    ];
-    let v11Mode = "quality"; let v11Chart = null;
-    function v11Number(value){ const n=parseFloat(String(value??"").replace(/[^0-9.\-]/g,"")); return Number.isFinite(n)?n:null; }
-    function v11GetSummary(name){ return summaryData.find(s=>String(s["代表姓名"]||"").trim()===name) || null; }
-    function v11Metric(name, mode){
-      const s=v11GetSummary(name); if(!s) return null;
-      const q=v11Number(s["提案總數"])||0, ask=v11Number(s["質詢總數"])||0;
-      if(mode==="volume") return q+ask;
-      const score=v11Number(s["綜合評分"]); return score;
+</footer>
+<script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbzPk2Lc9eXGxWCmX5gE47Eo3_A6OVlNjVBQlx-UacZD8JUCCBkkXXT5FY2InLJs_g/exec';
+let records = [], summaries = [], chart = null, cityTopicChart = null, repCompareChart = null, govCompareChart = null, repRadarChart = null;
+const requestedCaseKey = new URLSearchParams(location.search).get('case') || '';
+const $ = id => document.getElementById(id);
+const text = (v, fallback='—') => (v === null || v === undefined || String(v).trim()==='') ? fallback : String(v).trim();
+function repsOf(item){return text(item['推動代表與團隊'] || item['推動代表與团队'],'').split(/[,，、]/).map(x=>x.trim()).filter(x=>x && x!=='無' && x!=='-');}
+function caseType(item){const t=text(item['檔案類別'],'');return (t.includes('提案')||t.includes('決議'))?'提案':'質詢';}
+function dateScore(item){
+  const s=text(item['屆次'],'');
+  let m=s.match(/(\d{2,3})年(\d{1,2})月(\d{1,2})日/);
+  if(m)return (+m[1])*10000+(+m[2])*100+(+m[3]);
+  m=s.match(/第(\d+)屆第(\d+)次/); if(m)return (+m[1])*10000+(+m[2])*100;
+  return 0;
+}
+function addField(parent,label,value){
+  const div=document.createElement('div');div.className='field';
+  const b=document.createElement('b');b.textContent=label+'：';
+  const span=document.createElement('span');span.textContent=text(value);
+  div.append(b,span);parent.appendChild(div);
+}
+function makeButtonLink(label,url,secondary=false){
+  const a=document.createElement('a');a.className='button'+(secondary?' secondary':'');a.textContent=label;
+  if(url && /^https?:\/\//i.test(String(url))){a.href=String(url);a.target='_blank';a.rel='noopener noreferrer';}
+  else {a.href='#';a.addEventListener('click',e=>{e.preventDefault();alert('這筆資料沒有有效的原始文書連結。');});}
+  return a;
+}
+function caseShareKey(item){
+  // Stable compact identifier derived from the case's core source fields; no backend ID required.
+  const raw=[text(item['屆次']),caseType(item),repsOf(item).join('、'),text(item['核心訴求與現況'])].join('|');
+  let h1=2166136261,h2=0x9e3779b9;
+  for(let i=0;i<raw.length;i++){
+    const c=raw.charCodeAt(i);
+    h1=Math.imul(h1^c,16777619)>>>0;
+    h2=Math.imul(h2^(c+i),2246822519)>>>0;
+  }
+  return h1.toString(36).padStart(7,'0')+h2.toString(36).padStart(7,'0');
+}
+function caseShareUrl(item){
+  const u=new URL(location.href);
+  u.search='';u.hash='';
+  u.searchParams.set('case',caseShareKey(item));
+  return u.toString();
+}
+function addCaseShareActions(actions,item){
+  const url=caseShareUrl(item);
+  const copy=document.createElement('button');copy.className='secondary';copy.textContent='複製案件連結';
+  copy.addEventListener('click',async()=>{
+    try{await navigator.clipboard.writeText(url);copy.textContent='連結已複製';}
+    catch(e){window.prompt('請手動複製案件連結：',url);}
+    setTimeout(()=>copy.textContent='複製案件連結',1800);
+  });
+  actions.appendChild(copy);
+  const share=document.createElement('button');share.className='secondary';share.textContent='分享案件';
+  share.addEventListener('click',async()=>{
+    const title=text(item['核心訴求與現況'],'竹北市民代表監督案件');
+    const shareData={title:'竹北市民代表監督｜案件分享',text:title,url};
+    if(navigator.share){
+      try{await navigator.share(shareData);}catch(e){if(e&&e.name!=='AbortError')window.prompt('請手動複製案件連結：',url);}
+    }else{
+      try{await navigator.clipboard.writeText(url);share.textContent='連結已複製';}
+      catch(e){window.prompt('請手動複製案件連結：',url);}
+      setTimeout(()=>share.textContent='分享案件',1800);
     }
-    function v11Render(){
-      const labels=v11Roster; const vals=labels.map(n=>v11Metric(n,v11Mode));
-      const measured=vals.filter(v=>v!==null); const kpis=document.getElementById("v11Kpis");
-      const totalCases=labels.reduce((sum,n)=>{const s=v11GetSummary(n);return sum+(v11Number(s?.["提案總數"])||0)+(v11Number(s?.["質詢總數"])||0)},0);
-      const active=vals.filter(v=>v!==null && v>0).length;
-      kpis.innerHTML=`<div class="v11-kpi"><b>${labels.length}</b><span>完整代表名單</span></div><div class="v11-kpi"><b>${totalCases}</b><span>摘要統計案件量</span></div><div class="v11-kpi"><b>${active}/${labels.length}</b><span>有可用指標資料</span></div><div class="v11-kpi"><b>${measured.length?Math.round(measured.reduce((a,b)=>a+b,0)/measured.length*10)/10:"—"}</b><span>${v11Mode==="volume"?"每位代表平均案件量":"有資料者平均參考分"}</span></div>`;
-      const colors=vals.map(v=>v===null?"rgba(180,190,198,.45)":(v===0?"rgba(180,190,198,.55)":"rgba(52,152,219,.78)"));
-      if(v11Chart) v11Chart.destroy();
-      v11Chart=new Chart(document.getElementById("v11CompareChart").getContext("2d"),{type:"bar",data:{labels,datasets:[{label:v11Mode==="volume"?"案件量":"既有綜合評分",data:vals,backgroundColor:colors,borderColor:"rgba(44,62,80,.35)",borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:"y",plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.raw===null?"資料不足":(v11Mode==="volume"?c.raw+" 件":c.raw+" 分")}}},scales:{x:{beginAtZero:true,title:{display:true,text:v11Mode==="volume"?"案件筆數":"摘要參考分數"}},y:{ticks:{autoSkip:false,font:{size:11}}}},onClick:(e,els)=>{if(els.length){const name=labels[els[0].index];const select=document.getElementById("repFilter");select.value=name;filterData(false);document.getElementById("data-container").scrollIntoView({behavior:"smooth",block:"start"});}}}});
-      const note=document.getElementById("v11MethodNote");
-      if(v11Mode==="quality") note.textContent="品質比較：使用 API 摘要中的既有「綜合評分」作為品質參考，並非本頁重新計分。未有評分者顯示資料不足；分數與案件量應分開理解。";
-      else if(v11Mode==="volume") note.textContent="案件量／參與比較：提案總數＋質詢總數，呈現已收錄案件量，不等同問政品質。資料以 API 摘要欄位為準。";
-      else note.textContent="三層綜合比較：目前先以既有綜合評分呈現總覽入口。品質、持續參與與追蹤加分的新版細項欄位若尚未由資料源提供，本頁不自行推算或杜撰。";
+  });
+  actions.appendChild(share);
+}
+function renderCards(list){
+  const root=$('data-container');root.replaceChildren();
+  if(!list.length){const d=document.createElement('div');d.className='empty';d.textContent='沒有符合條件的案件。請調整篩選條件。';root.appendChild(d);return;}
+  const wrap=document.createElement('div');wrap.className='cards';
+  list.forEach(item=>{
+    const card=document.createElement('article');card.className='case-card '+(caseType(item)==='提案'?'type-proposal':'type-question');
+    const shareKey=caseShareKey(item);card.id='case-'+shareKey;if(requestedCaseKey&&shareKey===requestedCaseKey)card.classList.add('share-target');
+    const h=document.createElement('h3');h.textContent=text(item['核心訴求與現況'],'未提供案件摘要');card.appendChild(h);
+    const meta=document.createElement('div');meta.className='meta';
+    [text(item['屆次']),caseType(item)].forEach(v=>{const p=document.createElement('span');p.className='pill';p.textContent=v;meta.appendChild(p);});
+    text(item['分類標籤'],'').split(/[,，、]/).map(x=>x.trim()).filter(Boolean).forEach(v=>{const p=document.createElement('span');p.className='pill';p.textContent=v;meta.appendChild(p);});
+    card.appendChild(meta);
+    addField(card,'推動代表',repsOf(item).join('、')||'未標示');
+    addField(card,'對口單位（系統推估）',item['對口單位']);
+    addField(card,'地理標的',item['地理標的']);
+    addField(card,'官方承諾與決策',item['官方承諾與決策']);
+    const depth=text(item['監督深度'],'');
+    if(depth){const comment=document.createElement('div');comment.className='comment';comment.textContent='案件內容深度評析：'+depth;card.appendChild(comment);}
+    const scoreFields=[['問題界定','問題界定分數'],['證據準備','證據準備分數'],['具體訴求','具體訴求分數'],['追問監督','追問監督分數']];
+    const scoreGrid=document.createElement('div');scoreGrid.className='score-grid';
+    scoreFields.forEach(([label,key])=>{const chip=document.createElement('div');chip.className='score-chip';const strong=document.createElement('strong');const val=text(item[key],'未評估');strong.textContent=(val==='未評估'?'未評估':val+' / 5');chip.append(strong,document.createTextNode(label));scoreGrid.appendChild(chip);});
+    card.appendChild(scoreGrid);
+    const follow=text(item['前案追蹤狀態'],'文件不足判斷');
+    const gov=text(item['政府回應品質分數'],'未評估');
+    const tracking=document.createElement('div');tracking.className='score-note';tracking.textContent=`文件內追蹤線索（AI判讀）：${follow}｜資料庫日期比對：${text(item['資料庫前案比對結果'],'尚未執行全資料庫比對')}｜政府回應品質（獨立指標，不計入代表分數）：${gov==='未評估'?'未評估':gov+' / 5'}`;card.appendChild(tracking);
+    const rationale=text(item['評分依據與限制'],'');
+    if(rationale){const rationaleEl=document.createElement('div');rationaleEl.className='score-note';rationaleEl.textContent='評分依據／限制：'+rationale;card.appendChild(rationaleEl);}
+    let priorCases=[];
+    try{priorCases=JSON.parse(text(item['疑似相關前案'],'[]'));if(!Array.isArray(priorCases))priorCases=[];}catch(e){priorCases=[];}
+    if(priorCases.length){
+      const priorBox=document.createElement('div');priorBox.className='score-note';
+      const heading=document.createElement('strong');heading.textContent='可能相關的較早案件（系統比對，需人工核對）';priorBox.appendChild(heading);
+      const list=document.createElement('ul');list.style.paddingLeft='20px';
+      priorCases.forEach(prior=>{const li=document.createElement('li');const a=document.createElement('a');a.textContent=(prior.session||'較早案件')+'：'+(prior.title||'未提供摘要')+'（'+(prior.reason||'關聯待核對')+'）';if(prior.url&&/^https?:\/\//i.test(prior.url)){a.href=prior.url;a.target='_blank';a.rel='noopener noreferrer';}else{a.href='#';a.addEventListener('click',e=>e.preventDefault());}li.appendChild(a);list.appendChild(li);});
+      priorBox.appendChild(list);card.appendChild(priorBox);
     }
-    document.querySelectorAll("#v11Tabs button").forEach(btn=>btn.addEventListener("click",()=>{document.querySelectorAll("#v11Tabs button").forEach(b=>b.classList.remove("active"));btn.classList.add("active");v11Mode=btn.dataset.mode;v11Render();}));
+    const actions=document.createElement('div');actions.className='actions';
+    actions.appendChild(makeButtonLink('查看原始文書',item['資料來源']));
+    addCaseShareActions(actions,item);
+    const track=document.createElement('button');track.className='secondary';track.textContent='複製追蹤指令';
+    track.addEventListener('click',async()=>{
+      const title=text(item['核心訴求與現況'],'未提供案件摘要');
+      const prompt=`請協助搜尋新竹縣竹北市以下議題的最新處理進度或公開新聞，並列出來源與日期。若沒有可靠的後續公開資訊，請明確說明。\n議題：${title}`;
+      try{await navigator.clipboard.writeText(prompt);track.textContent='已複製指令';setTimeout(()=>track.textContent='複製追蹤指令',1600);}
+      catch(e){window.prompt('請手動複製以下指令：',prompt);}
+    });actions.appendChild(track);card.appendChild(actions);wrap.appendChild(card);
+  });
+  root.appendChild(wrap);
+  if(requestedCaseKey){const targetCard=document.getElementById('case-'+requestedCaseKey);if(targetCard&&!targetCard.dataset.scrolled){targetCard.dataset.scrolled='1';setTimeout(()=>targetCard.scrollIntoView({behavior:'smooth',block:'center'}),120);}}
+}
+function populateReps(){
+  const set=new Set();records.forEach(r=>repsOf(r).forEach(n=>{if(!n.includes('市長'))set.add(n);}));
+  const groups=[['第一選區',['戴佩如','彭竣志','范格菱','張美珠','曾玉菱','林維洲','陳秀玲','林祺烜','陳禹同']],['第二選區',['林啟賢主席','何宜芯','鄭建村','游雅婷','曾美琴','徐水鐘','邵啟月']],['第三選區',['葉信輝副主席','鄭慶源']],['第四選區',['曾祐宸','蔡文苑']]];
+  const sel=$('repFilter');sel.replaceChildren(new Option('所有代表',''));const used=new Set();
+  groups.forEach(([label,names])=>{const g=document.createElement('optgroup');g.label=label;names.forEach(n=>{const o=new Option(n,n);g.appendChild(o);used.add(n);});sel.appendChild(g);});
+  const others=[...set].filter(n=>!used.has(n)).sort((a,b)=>a.localeCompare(b,'zh-Hant'));
+  if(others.length){const g=document.createElement('optgroup');g.label='其他收錄姓名';others.forEach(n=>g.appendChild(new Option(n,n)));sel.appendChild(g);}
+}
+const DIMENSIONS=[
+  {key:'問題界定分數',label:'問題界定',weight:0.25},
+  {key:'證據準備分數',label:'證據準備',weight:0.30},
+  {key:'具體訴求分數',label:'具體訴求',weight:0.45},
+  {key:'追問監督分數',label:'追問監督（額外加分）',weight:0}
+];
+const PROPOSAL_DIMENSIONS=[
+  {key:'問題界定分數',label:'問題界定',weight:0.25},
+  {key:'證據準備分數',label:'證據準備',weight:0.30},
+  {key:'具體訴求分數',label:'書面訴求具體度',weight:0.45}
+];
+const FOLLOWUP_BONUS_MAX=0.30; // 追問監督最高額外加0.30/5，不列為必要品質項目
 
-    function populateRepDropdown(data) {
-      const repFilter = document.getElementById('repFilter');
-      repFilter.innerHTML = '<option value="">👨‍💼 選擇民意代表 (檢視戰力分析)</option>';
+function numericScore(value){
+  if(value===null||value===undefined||String(value).trim()==='')return null;
+  const n=Number(value);return Number.isFinite(n)&&n>=0&&n<=5?n:null;
+}
+function scoringDimensions(item){return caseType(item)==='提案'?PROPOSAL_DIMENSIONS:DIMENSIONS.filter(d=>d.weight>0);}
+function weightedCaseScore(item){
+  let total=0,weight=0;
+  scoringDimensions(item).forEach(d=>{const n=numericScore(item[d.key]);if(n!==null){total+=n*d.weight;weight+=d.weight;}});
+  if(!weight)return null;
+  const quality=total/weight;
+  const followup=(caseType(item)==='質詢')?numericScore(item['追問監督分數']):null;
+  const bonus=followup===null?0:(followup/5)*FOLLOWUP_BONUS_MAX;
+  return {score:Math.min(5,quality+bonus),quality,bonus,weight,dimensions:scoringDimensions(item)};
+}
+function aggregateByRep(){
+  const stats={};
+  records.forEach(r=>{
+    repsOf(r).filter(n=>!n.includes('市長')).forEach(rep=>{
+      if(!stats[rep])stats[rep]={cases:0,scoreSum:0,scoreN:0,dims:{},govSum:0,govN:0};
+      const st=stats[rep];st.cases++;
+      const overall=weightedCaseScore(r);if(overall){st.scoreSum+=overall.score;st.scoreN++;}
+      DIMENSIONS.forEach(d=>{const n=numericScore(r[d.key]);if(n!==null){if(!st.dims[d.key])st.dims[d.key]={sum:0,n:0};st.dims[d.key].sum+=n;st.dims[d.key].n++;}});
+      const gov=numericScore(r['政府回應品質分數']);if(gov!==null){st.govSum+=gov;st.govN++;}
+    });
+  });
+  return stats;
+}
+function chartTextColor(){return document.documentElement.getAttribute('data-theme')==='dark'?'#f0f3f5':'#40596a';}
+function chartGridColor(){return document.documentElement.getAttribute('data-theme')==='dark'?'#394752':'#dce5eb';}
+function destroyChart(c){if(c)c.destroy();}
 
-      const dataRepSet = new Set();
-      data.forEach(item => {
-        const fieldName = item['推動代表與團隊'] ? '推動代表與團隊' : '推動代表與团队';
-        if (item[fieldName]) {
-          const reps = item[fieldName].split(',');
-          reps.forEach(rep => {
-            const cleanName = rep.trim();
-            if (cleanName && cleanName !== '無' && cleanName !== '-') dataRepSet.add(cleanName);
-          });
-        }
-      });
+let interactiveCompareChart=null;
+function closeCompareModal(){ $('compareBackdrop').classList.add('hidden'); }
+function openCompareModal(){ $('compareBackdrop').classList.remove('hidden'); renderInteractiveComparison(); }
+const REPRESENTATIVE_ROSTER=['戴佩如','彭竣志','范格菱','張美珠','曾玉菱','林維洲','陳秀玲','林祺烜','陳禹同','林啟賢主席','何宜芯','鄭建村','游雅婷','曾美琴','徐水鐘','邵啟月','葉信輝副主席','鄭慶源','曾祐宸','蔡文苑'];
+const SHRINKAGE_PRIOR_N=5; // 約五筆案件的先驗權重，抑制少量高分樣本過度拉高排名
+function comparisonStats(type){
+ const stats={};
+ REPRESENTATIVE_ROSTER.forEach(rep=>{stats[rep]={sum:0,n:0,dimension:{},cases:[]};});
+ records.filter(r=>type==='all'||caseType(r)===type).forEach(r=>{
+  repsOf(r).filter(n=>!n.includes('市長')).forEach(rep=>{
+   if(!stats[rep])stats[rep]={sum:0,n:0,dimension:{},cases:[]};
+   const st=stats[rep];st.cases.push(r);const score=weightedCaseScore(r);if(score){st.sum+=score.score;st.n++;}
+   score?.dimensions.forEach(d=>{const val=numericScore(r[d.key]);if(val!==null){if(!st.dimension[d.key])st.dimension[d.key]={sum:0,n:0};st.dimension[d.key].sum+=val;st.dimension[d.key].n++;}});
+   if(caseType(r)==='質詢'){const follow=numericScore(r['追問監督分數']);if(follow!==null){if(!st.dimension['追問監督分數'])st.dimension['追問監督分數']={sum:0,n:0};st.dimension['追問監督分數'].sum+=follow;st.dimension['追問監督分數'].n++;}}
+  });
+ });return stats;
+}
+function renderCompareDetail(rep,type,stats){
+ const root=$('compareDetail');root.replaceChildren();
+ const h=document.createElement('h3');h.textContent=rep+'｜評分拆解';root.appendChild(h);
+ const st=stats[rep];if(!st){root.innerHTML='<p class="small">此代表目前沒有符合條件的案件。</p>';return;}
+ const rawScore=st.n?st.sum/st.n:null;const globalVals=Object.values(stats).filter(x=>x.n>0);const priorMean=globalVals.length?globalVals.reduce((a,x)=>a+x.sum,0)/globalVals.reduce((a,x)=>a+x.n,0):null;const adjusted=st.n&&priorMean!==null?(st.sum+priorMean*SHRINKAGE_PRIOR_N)/(st.n+SHRINKAGE_PRIOR_N):null;
+ const p=document.createElement('p');p.textContent=`樣本調整分數：${adjusted===null?'無有效評分':adjusted.toFixed(2)+' / 5'}；原始平均：${rawScore===null?'無有效評分':rawScore.toFixed(2)+' / 5'}；有效案件 ${st.n} 筆；收錄案件 ${st.cases.length} 筆。${st.n===0?'目前資料來源未找到紀錄，並不等於確定沒有履職。':''}${rep.includes('林啟賢')&&type!=='提案'?' 主席主要主持會議，口頭質詢角色與一般代表不同，質詢數量不宜直接類比。':''}`;root.appendChild(p);
+ const dims=type==='提案'?PROPOSAL_DIMENSIONS:DIMENSIONS.filter(d=>d.weight>0);
+ dims.forEach(d=>{const o=st.dimension[d.key],row=document.createElement('div');row.className='detail-dim';const left=document.createElement('span');left.textContent=`${d.label}（品質權重 ${Math.round(d.weight*100)}%）`;const right=document.createElement('strong');right.textContent=o&&o.n?`${(o.sum/o.n).toFixed(2)} / 5（${o.n}筆）`:'未評估';row.append(left,right);root.appendChild(row);});
+ if(type!=='提案'){const o=st.dimension['追問監督分數'],row=document.createElement('div');row.className='detail-dim';const left=document.createElement('span');left.textContent='追問監督（額外加分，最高 +0.30）';const right=document.createElement('strong');right.textContent=o&&o.n?`${(o.sum/o.n).toFixed(2)} / 5（${o.n}筆）`:'未評估／無加分';row.append(left,right);root.appendChild(row);}
+ const cap=document.createElement('h3');cap.style.marginTop='14px';cap.textContent='評分案例與文本依據';root.appendChild(cap);
+ st.cases.slice().sort((a,b)=>dateScore(b)-dateScore(a)).slice(0,12).forEach(item=>{
+  const box=document.createElement('div');box.className='case-evidence';
+  const title=document.createElement('strong');title.textContent=`${text(item['屆次'],'會期未載')}｜${caseType(item)}｜${text(item['核心訴求與現況'],'未提供摘要').slice(0,100)}`;box.appendChild(title);
+  const rationale=document.createElement('p');rationale.className='small';rationale.textContent=text(item['評分依據與限制'],'文件未提供具體評分依據');box.appendChild(rationale);
+  const chips=document.createElement('p');chips.className='small';chips.textContent=dims.map(d=>`${d.label}: ${numericScore(item[d.key])===null?'未評估':numericScore(item[d.key])}`).join('｜')+(caseType(item)==='質詢'?`｜追問加分項: ${numericScore(item['追問監督分數'])===null?'未評估':numericScore(item['追問監督分數'])} / 5｜本案額外加分: +${weightedCaseScore(item)?.bonus.toFixed(2)??'0.00'}`:'');box.appendChild(chips);
+  root.appendChild(box);
+ });
+}
+function renderInteractiveComparison(){
+ const type=$('compareType').value,mode=$('compareMode').value,stats=comparisonStats(type);
+ const allRaw=Object.values(stats).filter(s=>s.n>0);
+ const priorMean=allRaw.length?allRaw.reduce((acc,s)=>acc+s.sum,0)/allRaw.reduce((acc,s)=>acc+s.n,0):null;
+ const rows=Object.entries(stats).map(([name,s])=>{
+   const raw=s.n?s.sum/s.n:null;
+   const adjusted=s.n&&priorMean!==null?(s.sum+priorMean*SHRINKAGE_PRIOR_N)/(s.n+SHRINKAGE_PRIOR_N):null;
+   const followScores=s.cases.filter(r=>caseType(r)==='質詢').map(r=>numericScore(r['追問監督分數'])).filter(v=>v!==null);
+   const bonusAvg=followScores.length?(followScores.reduce((a,b)=>a+b,0)/followScores.length/5)*FOLLOWUP_BONUS_MAX:null;
+   return {name,score:adjusted,raw,n:s.n,cases:s.cases.length,bonusAvg,followN:followScores.length};
+ }).sort((a,b)=>{if(a.score===null&&b.score!==null)return 1;if(a.score!==null&&b.score===null)return -1;if(a.score!==null&&b.score!==null&&a.score!==b.score)return b.score-a.score;return a.name.localeCompare(b.name,'zh-Hant');});
+ if(interactiveCompareChart)interactiveCompareChart.destroy();
+ const chartData=mode==='volume'
+  ? {labels:rows.map(x=>x.name),datasets:[{label:'收錄案件量（筆）',data:rows.map(x=>x.cases),backgroundColor:rows.map((x,i)=>i===0?'#d69b3d':'#176b87'),borderRadius:5}]}
+  : mode==='combined'
+  ? {labels:rows.map(x=>x.name),datasets:[
+      {label:'樣本調整品質分數（/5）',data:rows.map(x=>x.score===null?null:Number(x.score.toFixed(2))),backgroundColor:'rgba(23,107,135,.72)',borderRadius:5,xAxisID:'x',yAxisID:'yScore',type:'bar'},
+      {label:'收錄案件量（筆）',data:rows.map(x=>x.cases),borderColor:'#d69b3d',backgroundColor:'#d69b3d',pointRadius:3,tension:.2,type:'line',yAxisID:'yCount'},
+      {label:'追問監督平均額外加分（/5轉換）',data:rows.map(x=>x.bonusAvg===null?null:Number(x.bonusAvg.toFixed(2))),borderColor:'#187f72',backgroundColor:'#187f72',pointRadius:3,tension:.2,type:'line',yAxisID:'yScore'}
+    ]}
+  : {labels:rows.map(x=>x.name),datasets:[{label:'樣本調整後監督品質（/5）',data:rows.map(x=>x.score===null?null:Number(x.score.toFixed(2))),backgroundColor:rows.map((x,i)=>i===0?'#d69b3d':'#176b87'),borderRadius:5}]};
+ const scales=mode==='combined'
+  ? {x:{grid:{display:false},ticks:{color:chartTextColor()}},yScore:{position:'left',min:0,max:5,title:{display:true,text:'品質分數／加分',color:chartTextColor()},grid:{color:chartGridColor()},ticks:{color:chartTextColor()}},yCount:{position:'right',beginAtZero:true,title:{display:true,text:'案件量（筆）',color:chartTextColor()},grid:{drawOnChartArea:false},ticks:{color:chartTextColor()}}}
+  : {x:{beginAtZero:true,...(mode==='quality'?{min:0,max:5}:{}),grid:{color:chartGridColor()},ticks:{color:chartTextColor()},title:{display:true,text:mode==='volume'?'收錄案件數（筆）':'樣本調整品質分數（/5）',color:chartTextColor()}},y:{grid:{display:false},ticks:{color:chartTextColor()}}};
+ interactiveCompareChart=new Chart($('interactiveCompareChart'),{type:'bar',data:chartData,options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,onClick:(evt,elements)=>{if(elements.length)renderCompareDetail(rows[elements[0].index].name,type,stats);},scales,plugins:{legend:{display:mode==='combined',labels:{color:chartTextColor()}},tooltip:{callbacks:{afterLabel:c=>{const r=rows[c.dataIndex];return mode==='volume'?('收錄案件：'+r.cases+'筆；有效評分：'+r.n+'筆'):('有效評分案件：'+r.n+'筆；原始平均：'+(r.raw===null?'無':r.raw.toFixed(2))+(mode==='combined'?'；追問加分有效樣本：'+r.followN+'筆':'')+'；點擊查看評分依據');}}}}});
+ if(rows.length)renderCompareDetail(rows.find(x=>x.n>0)?.name||rows[0].name,type,stats);
+ else $('compareDetail').innerHTML='<h3>目前沒有資料</h3><p class="small">完整20席名冊仍保留；無資料者不虛構分數。</p>';
+}
+function renderOverview(){
+ $('overview').classList.remove('hidden');
+ $('totalCases').textContent=records.length.toLocaleString();
+ $('totalQ').textContent=records.filter(x=>caseType(x)==='質詢').length.toLocaleString();
+ $('totalP').textContent=records.filter(x=>caseType(x)==='提案').length.toLocaleString();
+ const stats=aggregateByRep();$('repCount').textContent='20';const seen=new Set();records.forEach(r=>repsOf(r).forEach(n=>seen.add(n)));const coverage=REPRESENTATIVE_ROSTER.filter(n=>[...seen].some(s=>s===n||s.replace('主席','').replace('副主席','')===n.replace('主席','').replace('副主席',''))).length;$('repCoverage').textContent=coverage+' / 20';$('noRecordCount').textContent=(20-coverage).toString();
+}
+function renderRepPanel(rep){
+  if(!rep){$('repPanel').classList.add('hidden');if(chart){chart.destroy();chart=null;}if(repRadarChart){repRadarChart.destroy();repRadarChart=null;}return;}
+  const cases=records.filter(r=>repsOf(r).includes(rep));
+  const ps=cases.filter(r=>caseType(r)==='提案').length, qs=cases.length-ps;
+  const scores=cases.map(weightedCaseScore).filter(Boolean);
+  const avg=scores.length?Number((scores.reduce((a,b)=>a+b.score,0)/scores.length).toFixed(2)):null;
+  const cats={};cases.forEach(r=>{const tags=text(r['歸納大分類']||r['分類標籤'],'綜合行政與人事').split(/[,，、]/);tags.forEach(t=>{t=t.trim();if(t)cats[t]=(cats[t]||0)+1;});});
+  const sorted=Object.entries(cats).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  $('repPanel').classList.remove('hidden');$('repHeading').textContent=rep+'｜問政紀錄概況';
+  $('repP').textContent=ps.toLocaleString();$('repQ').textContent=qs.toLocaleString();$('repAvg').textContent=avg===null?'無資料':avg.toFixed(2)+' / 5';
+  $('repIssues').textContent=sorted.slice(0,2).map(x=>x[0]).join('、')||'無資料';
+  const summary=summaries.find(s=>text(s['代表姓名'],'')===rep);
+  const box=$('repSummaryText');box.replaceChildren();
+  const potentialPriorCount=cases.filter(r=>{try{return JSON.parse(text(r['疑似相關前案'],'[]')).length>0;}catch(e){return false;}}).length;
+  const lines=[
+    ['代表參與紀錄',cases.length+'筆（共同提案可能各列一筆）'],
+    ['有疑似相關前案可供核對',potentialPriorCount+'筆（不是追蹤成功的判定）'],
+    ['常見議題',sorted.slice(0,3).map(x=>x[0]).join('、')||'無資料'],
+    ['問題界定平均',summary?summary['問題界定平均']+'/5':'尚無資料'],
+    ['證據準備平均',summary?summary['證據準備平均']+'/5':'尚無資料'],
+    ['具體訴求平均',summary?summary['具體訴求平均']+'/5':'尚無資料'],
+    ['追問監督平均',summary?summary['追問監督平均']+'/5':'尚無資料'],
+    ['文件內前案追蹤線索數',summary?summary['文件內前案追蹤線索數']+'筆':'尚無資料'],
+    ['政府回應品質平均（獨立指標）',summary?summary['政府回應平均分']+'/5':'尚無資料'],
+    ['資料摘要',summary?summary['問政風格評析']:'目前沒有摘要']
+  ];
+  lines.forEach(([k,v])=>{const p=document.createElement('p');const b=document.createElement('strong');b.textContent=k+'：';p.append(b,document.createTextNode(text(v).replace(/<[^>]*>/g,'')));box.appendChild(p);});
+  const ctx=$('topicChart').getContext('2d');if(chart)chart.destroy();
+  chart=new Chart(ctx,{type:'doughnut',data:{labels:sorted.map(x=>x[0]),datasets:[{data:sorted.map(x=>x[1]),backgroundColor:['#176b87','#187f72','#d69b3d','#8a6bb8','#5a8dba','#c76d52','#6c9b78','#a0aab2'],borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:chartTextColor()}},tooltip:{callbacks:{label:c=>`${c.label}：${c.raw}筆`}}}}});
+  const dimValues=DIMENSIONS.map(d=>{const vals=cases.map(r=>numericScore(r[d.key])).filter(v=>v!==null);return vals.length?Number((vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2)):null;});
+  destroyChart(repRadarChart);repRadarChart=new Chart($('repRadarChart'),{type:'radar',data:{labels:DIMENSIONS.map(d=>d.label),datasets:[{label:rep+'平均分數',data:dimValues,backgroundColor:'rgba(23,107,135,.18)',borderColor:'#176b87',pointBackgroundColor:'#176b87',spanGaps:false}]},options:{responsive:true,maintainAspectRatio:false,scales:{r:{min:0,max:5,ticks:{stepSize:1,color:chartTextColor(),backdropColor:'transparent'},grid:{color:chartGridColor()},angleLines:{color:chartGridColor()},pointLabels:{color:chartTextColor()}}},plugins:{legend:{labels:{color:chartTextColor()}},tooltip:{callbacks:{label:c=>c.raw===null?'未評估':`${c.dataset.label}：${c.raw} / 5`}}}}});
+}
+function normalizeSearch(value){
+  // 統一全半形，忽略空白、括號及標點差異，讓「第8次」與完整會期都能命中。
+  return String(value===null||value===undefined?'':value).normalize('NFKC').toLocaleLowerCase('zh-Hant').replace(/[\s\p{P}\p{S}]/gu,'');
+}
+let sharedCaseResolved=false;
+function applyFilters(){
+  if(requestedCaseKey&&!sharedCaseResolved){
+    const target=records.find(r=>caseShareKey(r)===requestedCaseKey);
+    if(target){$('repFilter').value='';$('typeFilter').value='';$('searchInput').value='';$('sortFilter').value='desc';sharedCaseResolved=true;}
+  }
+  const rep=$('repFilter').value,type=$('typeFilter').value,sort=$('sortFilter').value,keyword=normalizeSearch($('searchInput').value.trim());
+  const list=records.filter(r=>{
+    const names=repsOf(r);
+    if(rep&&!names.includes(rep))return false;
+    if(type&&caseType(r)!==type)return false;
+    // 「屆次」欄位包含會期與日期，必須納入搜尋；其餘欄位保留原有搜尋能力。
+    const hay=normalizeSearch([r['屆次'],r['檔案類別'],r['核心訴求與現況'],r['推動代表與團隊'],r['地理標的'],r['分類標籤'],r['官方承諾與決策'],r['對口單位'],r['資料來源']].map(x=>text(x,'')).join(' '));
+    return !keyword||hay.includes(keyword);
+  }).sort((a,b)=>sort==='asc'?dateScore(a)-dateScore(b):dateScore(b)-dateScore(a));
+  $('count').textContent=`符合條件：${list.length.toLocaleString()} 筆／資料庫共 ${records.length.toLocaleString()} 筆`;
+  if(requestedCaseKey&&!records.some(r=>caseShareKey(r)===requestedCaseKey))$('count').textContent+='｜分享連結中的案件識別碼未能匹配，可能資料已更新或連結有誤。';
+  renderCards(list);renderRepPanel(rep);
+}
+['repFilter','typeFilter','sortFilter'].forEach(id=>$(id).addEventListener('change',applyFilters));
+$('searchInput').addEventListener('input',applyFilters);
+$('clearBtn').addEventListener('click',()=>{$('repFilter').value='';$('typeFilter').value='';$('sortFilter').value='desc';$('searchInput').value='';applyFilters();});
+function applyTheme(theme){
+  const chosen=theme==='dark'?'dark':'light';
+  document.documentElement.setAttribute('data-theme',chosen);
+  const button=$('themeToggle');
+  if(button){button.textContent=chosen==='dark'?'切換白底':'切換黑底';button.setAttribute('aria-pressed',String(chosen==='dark'));}
+  [chart,cityTopicChart,repCompareChart,govCompareChart,repRadarChart,interactiveCompareChart].forEach(c=>{if(c){if(c.options.plugins&&c.options.plugins.legend&&c.options.plugins.legend.labels)c.options.plugins.legend.labels.color=chosen==='dark'?'#f0f3f5':'#40596a';c.update();}});
+  try{localStorage.setItem('zb-dashboard-theme',chosen);}catch(e){}
+}
+(function initTheme(){
+  let saved='light';try{saved=localStorage.getItem('zb-dashboard-theme')||'light';}catch(e){}
+  applyTheme(saved);
+})();
+$('openCompare').addEventListener('click',openCompareModal);
+$('closeCompare').addEventListener('click',closeCompareModal);
+$('compareBackdrop').addEventListener('click',e=>{if(e.target===$('compareBackdrop'))closeCompareModal();});
+$('compareType').addEventListener('change',renderInteractiveComparison);
+$('compareMode').addEventListener('change',renderInteractiveComparison);
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeCompareModal();});
+$('themeToggle').addEventListener('click',()=>{
+  const current=document.documentElement.getAttribute('data-theme')||'light';
+  applyTheme(current==='dark'?'light':'dark');
+});
 
-      const districts = [
-        { group: "第一選區", members: ["戴佩如", "彭竣志", "范格菱", "張美珠", "曾玉菱", "林維洲", "陳秀玲", "林祺烜", "陳禹同"] },
-        { group: "第二選區", members: ["林啟賢主席", "何宜芯", "鄭建村", "游雅婷", "曾美琴", "徐水鐘", "邵啟月"] },
-        { group: "第三選區", members: ["葉信輝副主席", "鄭慶源"] },
-        { group: "第四選區", members: ["曾祐宸", "蔡文苑"] }
-      ];
-
-      const addedReps = new Set();
-
-      districts.forEach(district => {
-        const optgroup = document.createElement('optgroup');
-        optgroup.label = `📍 ${district.group}`;
-        district.members.forEach(member => {
-          const option = document.createElement('option');
-          option.value = member;
-          option.textContent = member;
-          optgroup.appendChild(option);
-          addedReps.add(member);
-        });
-        repFilter.appendChild(optgroup);
-      });
-
-      const others = Array.from(dataRepSet).filter(rep => !addedReps.has(rep));
-      if (others.length > 0) {
-        const optgroup = document.createElement('optgroup');
-        optgroup.label = "📍 其他";
-        others.sort().forEach(rep => {
-          const option = document.createElement('option');
-          option.value = rep;
-          option.textContent = rep;
-          optgroup.appendChild(option);
-        });
-        repFilter.appendChild(optgroup);
-      }
-    }
-
-    function renderCards(dataToRender) {
-      const container = document.getElementById('data-container');
-      container.innerHTML = ''; 
-
-      if (dataToRender.length === 0) {
-        container.innerHTML = '<div class="loading">找不到符合條件的資料。</div>';
-        return;
-      }
-
-      dataToRender.forEach(item => {
-        const card = document.createElement('div');
-        card.className = 'card';
-        let tagsHtml = '';
-        if (item['分類標籤']) {
-          const tagArray = item['分類標籤'].split(',');
-          tagsHtml = tagArray.map(tag => `<span class="tag">${tag.trim()}</span>`).join('');
-        }
-
-        const safeTitle = (item['核心訴求與現況'] || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
-        const repField = item['推動代表與團隊'] || item['推動代表與团队'] || '-';
-        
-        const depthFull = item['監督深度'] || '';
-        const depthComment = depthFull.replace(/^\[?\d{1,3}\]?(?:分)?\s*/, '') || '持續監督基層施政。';
-
-        card.innerHTML = `
-          <h3>${item['核心訴求與現況'] || '無標題'}</h3>
-          <div class="info-row"><strong>📌 屆次：</strong> ${item['屆次'] || '-'} ｜ <strong>📂 類別：</strong> ${item['檔案類別'] || '-'}</div>
-          <div class="info-row"><strong>🗣️ 推動代表：</strong> ${repField}</div>
-          <div class="info-row"><strong>🏢 對口單位：</strong> ${item['對口單位'] || '-'} <span class="inline-disclaimer">(註: 系統推估)</span> ｜ <strong>📍 地理標的：</strong> ${item['地理標的'] || '-'}</div>
-          <div class="info-row"><strong>✅ 官方決策：</strong> ${item['官方承諾與決策'] || '-'}</div>
-          
-          <div class="depth-comment">
-            <strong>🧐 議事評析：</strong> ${depthComment}
-          </div>
-
-          <div>${tagsHtml}</div>
-          <div class="action-buttons">
-            <a class="btn-primary" href="${item['資料來源']}" target="_blank">📄 查看原始文書</a>
-            <button class="btn-secondary" onclick="generateBillPrompt('${safeTitle}')">🔍 AI 追蹤最新進度</button>
-          </div>
-        `;
-        container.appendChild(card);
-      });
-    }
-
-    function clearAllFilters() {
-      document.getElementById('typeFilter').value = '';
-      document.getElementById('searchInput').value = '';
-      document.getElementById('sortFilter').value = 'asc'; // 重置時也預設由舊到新
-      currentChartCategoryFilter = '';
-      filterData();
-    }
-
-    function updateClearButtonVisibility() {
-      const type = document.getElementById('typeFilter').value;
-      const search = document.getElementById('searchInput').value;
-      const clearBtn = document.getElementById('clearFilterBtn');
-      if (type !== '' || search !== '' || currentChartCategoryFilter !== '') {
-        clearBtn.style.display = 'inline-block';
-      } else {
-        clearBtn.style.display = 'none';
-      }
-    }
-
-    function updateChart(repName, allRepData, currentTypeFilter) {
-      const chartWrapper = document.getElementById('chartWrapper');
-      const analysisBox = document.getElementById('localAnalysisBox');
-
-      if (!repName || allRepData.length === 0) {
-        chartWrapper.style.display = 'none';
-        if(repName && allRepData.length === 0) generateLocalAnalysis(repName);
-        else analysisBox.style.display = 'none';
-        return;
-      }
-
-      chartWrapper.style.display = 'block';
-
-      const topicCounts = {};
-      let qCount = 0;
-      let pCount = 0;
-
-      allRepData.forEach(item => {
-        if (item['歸納大分類']) {
-          const tags = item['歸納大分類'].split(',');
-          tags.forEach(tag => {
-            const cleanTag = tag.trim();
-            if (cleanTag) topicCounts[cleanTag] = (topicCounts[cleanTag] || 0) + 1;
-          });
-        }
-        const typeField = item['檔案類別'] || '';
-        if (typeField.includes('提案') || typeField.includes('決議')) {
-          pCount++;
-        } else {
-          qCount++;
-        }
-      });
-
-      const sortedTopics = Object.keys(topicCounts).sort((a, b) => topicCounts[b] - topicCounts[a]);
-      const outerDataValues = sortedTopics.map(tag => topicCounts[tag]);
-
-      const outerColors = sortedTopics.map(tag => {
-        const baseColor = categoryColorMap[tag] || "rgba(149, 165, 166, 0.9)";
-        if (currentChartCategoryFilter === '' || currentChartCategoryFilter === tag) {
-          return baseColor;
-        }
-        return "rgba(236, 240, 241, 0.4)";
-      });
-
-      const innerData = [];
-      const innerLabels = [];
-      const innerColors = [];
-
-      if (qCount > 0) {
-        innerData.push(qCount);
-        innerLabels.push('市政質詢');
-        innerColors.push((currentTypeFilter === '' || currentTypeFilter === '質詢') ? 'rgba(220, 20, 60, 0.85)' : 'rgba(236, 240, 241, 0.4)');
-      }
-      if (pCount > 0) {
-        innerData.push(pCount);
-        innerLabels.push('正式提案');
-        innerColors.push((currentTypeFilter === '' || currentTypeFilter === '提案') ? 'rgba(21, 67, 96, 0.85)' : 'rgba(236, 240, 241, 0.4)');
-      }
-
-      const legendQ = document.getElementById('legend-item-q');
-      const legendP = document.getElementById('legend-item-p');
-      if (legendQ && legendP) {
-        if (currentTypeFilter === '質詢') {
-          legendQ.style.opacity = '1';
-          legendP.style.opacity = '0.3';
-        } else if (currentTypeFilter === '提案') {
-          legendQ.style.opacity = '0.3';
-          legendP.style.opacity = '1';
-        } else {
-          legendQ.style.opacity = '1';
-          legendP.style.opacity = '1';
-        }
-      }
-
-      generateLocalAnalysis(repName);
-
-      if (topicChartInstance) topicChartInstance.destroy();
-
-      const ctx = document.getElementById('topicChart').getContext('2d');
-      topicChartInstance = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-          labels: sortedTopics, 
-          datasets: [
-            {
-              data: outerDataValues,
-              backgroundColor: outerColors,
-              borderColor: '#ffffff',
-              borderWidth: 2,
-              customLabels: sortedTopics,
-              weight: 2.2
-            },
-            {
-              data: [1],
-              backgroundColor: ['transparent'],
-              borderColor: 'transparent',
-              weight: 0.25,
-              tooltip: false
-            },
-            {
-              data: innerData,
-              backgroundColor: innerColors,
-              borderColor: '#ffffff',
-              borderWidth: 2,
-              customLabels: innerLabels,
-              weight: 1.5
-            }
-          ]
-        },
-        options: { 
-          responsive: true, 
-          maintainAspectRatio: false, 
-          cutout: '15%',
-          plugins: { 
-            legend: { 
-              display: true,
-              position: 'right',
-              onClick: function() {},
-              labels: { 
-                font: { size: 12, family: "'Segoe UI', sans-serif" }, 
-                padding: 15,
-                generateLabels: function(chart) {
-                  const data = chart.data;
-                  if (data.datasets.length) {
-                    return data.datasets[0].customLabels.map((label, i) => {
-                      const baseColor = categoryColorMap[label] || '#ccc';
-                      const isDimmed = currentChartCategoryFilter !== '' && currentChartCategoryFilter !== label;
-                      return {
-                        text: label,
-                        fillStyle: isDimmed ? 'rgba(236, 240, 241, 0.4)' : baseColor,
-                        strokeStyle: '#fff',
-                        lineWidth: 1,
-                        hidden: false,
-                        index: i,
-                        datasetIndex: 0,
-                        fontColor: isDimmed ? '#bdc3c7' : '#333'
-                      };
-                    });
-                  }
-                  return [];
-                }
-              }
-            },
-            tooltip: {
-              callbacks: {
-                title: function() { return ''; }, 
-                label: function(context) {
-                  if (context.datasetIndex === 1) return '';
-                  return ' ' + context.dataset.customLabels[context.dataIndex] + ': ' + context.raw + ' 案';
-                }
-              }
-            }
-          },
-          onClick: (e, activeEls) => {
-            if (activeEls.length > 0) {
-              const datasetIndex = activeEls[0].datasetIndex;
-              const dataIndex = activeEls[0].index;
-
-              if (datasetIndex === 0) {
-                const clickedLabel = topicChartInstance.data.datasets[0].customLabels[dataIndex];
-                currentChartCategoryFilter = (currentChartCategoryFilter === clickedLabel) ? '' : clickedLabel;
-              } else if (datasetIndex === 2) {
-                const clickedLabel = topicChartInstance.data.datasets[2].customLabels[dataIndex];
-                const typeSelect = document.getElementById('typeFilter');
-                if (clickedLabel === '正式提案') {
-                  typeSelect.value = (typeSelect.value === '提案') ? '' : '提案';
-                } else if (clickedLabel === '市政質詢') {
-                  typeSelect.value = (typeSelect.value === '質詢') ? '' : '質詢';
-                }
-              }
-              filterData(true); 
-            }
-          }
-        }
-      });
-    }
-
-    function generateLocalAnalysis(repName) {
-      const analysisBox = document.getElementById('localAnalysisBox');
-      const analysisText = document.getElementById('localAnalysisText');
-      const repSummary = summaryData.find(s => s['代表姓名'] === repName);
-
-      if (!repSummary) {
-        analysisBox.style.display = 'none';
-        return;
-      }
-
-      const proposals = repSummary['提案總數'] || 0;
-      const interpellations = repSummary['質詢總數'] || 0;
-      const score = repSummary['綜合評分'] || '分析中';
-      
-      // 1. 強制過濾所有隱形的換行與空白
-      let rawStyleEval = (repSummary['問政風格評析'] || '系統累積數據中...').replace(/[\r\n\t]+/g, '');
-      
-      // 2. 移除後端多餘的「發言多以如實...」等 Part 4 贅述，將結尾停留在「相關事務。」
-      let styleEval = rawStyleEval.replace(/相關事務。.*$/, '相關事務。');
-
-      if (proposals === 0 && interpellations === 0) {
-        let html = `<div class="analysis-block" style="color:#e74c3c;"><strong>⚠️ 系統警示：該代表目前在資料庫中尚無任何提案或質詢案件紀錄。</strong></div>`;
-        html += `
-          <div class="kpi-box" style="border-color: #fadbd8; background-color: #fdf2e9;">
-            <span class="kpi-title" style="color: #c0392b;">📝 問政風格評析</span>
-            ${styleEval}
-          </div>
-        `;
-        analysisText.innerHTML = html;
-        analysisBox.style.display = 'block';
-        document.getElementById('filteredCount').innerText = `該代表無相關資料`;
-        return;
-      }
-
-      const issues = repSummary['前三大關心議題'] ? String(repSummary['前三大關心議題']).replace(/,/g, '、') : '無紀錄';
-      const dept = repSummary['最常督辦單位'] || '無紀錄';
-      const geos = repSummary['最常走跳熱點'] && repSummary['最常走跳熱點'] !== '無特定集中熱點' ? repSummary['最常走跳熱點'] : '無特定集中熱點';
-
-      let htmlContent = `
-        <div class="summary-grid">
-          <div class="stat-box">
-            <span class="stat-num">${proposals}</span>
-            <span class="stat-label">正式提案 (筆)</span>
-          </div>
-          <div class="stat-box">
-            <span class="stat-num">${interpellations}</span>
-            <span class="stat-label">市政質詢 (次)</span>
-          </div>
-          <div class="stat-box" style="border: 2px solid #f39c12; background-color: #fffcf3;">
-            <span class="stat-num" style="color: #d35400;">
-              ${score}
-              <span class="tooltip">ⓘ
-                <span class="tooltip-text">
-                  <strong>綜合監督評分基準：</strong><br>
-                  提案量(35%) ＋ 質詢量(35%) ＋ 逐案深度(30%) 交叉演算。<br><hr style="border:0; border-top:1px solid #555; margin:8px 0;">
-                  <strong>分數級距說明：</strong><br>
-                  • 80分以上：頂標，問政火力極強<br>
-                  • 60-79分：前段班，具備扎實監督量能<br>
-                  • 40-59分：中段班，具備基本監督量能<br>
-                  • 20-39分：中後段班，監督動能較溫和<br>
-                  • 20分以下：末段班，戰力尚未釋放
-                </span>
-              </span>
-            </span>
-            <span class="stat-label">綜合監督評分</span>
-          </div>
-        </div>
-
-        <div class="summary-details">
-          <div>🎯 <span>核心施政力道：</span> ${issues}</div>
-          <div>🏢 <span>最常對接督辦：</span> ${dept}</div>
-          <div>📍 <span>最常走跳熱點：</span> ${geos}</div>
-        </div>
-
-        <div class="summary-style-box">
-          <strong>📝 問政風格評析</strong>
-          <p>${styleEval}</p>
-        </div>
-
-        <span class="disclaimer">※ 註：對口單位為系統依實務語意歸納；部分牽涉縣道、水利、教育等案件，公所可能轉由新竹縣政府或外部單位協辦。風格與評分由 AI 依據客觀數據自動統整生成。</span>
-      `;
-
-      analysisText.innerHTML = htmlContent;
-      analysisBox.style.display = 'block';
-    }
-
-    document.getElementById('searchInput').addEventListener('input', () => filterData(false));
-    document.getElementById('typeFilter').addEventListener('change', () => filterData(false));
-    document.getElementById('repFilter').addEventListener('change', () => filterData(false));
-    document.getElementById('sortFilter').addEventListener('change', () => filterData(false));
-
-    function filterData(fromChartClick = false) {
-      const keyword = document.getElementById('searchInput').value.toLowerCase();
-      const type = document.getElementById('typeFilter').value;
-      const rep = document.getElementById('repFilter').value;
-      const sortOrder = document.getElementById('sortFilter').value;
-
-      if (!fromChartClick) {
-        currentChartCategoryFilter = ''; 
-      }
-
-      updateClearButtonVisibility();
-
-      const allRepData = allData.filter(item => {
-        const repField = item['推推代表與團隊'] || item['推動代表與团队'] || item['推動代表與團隊'] || '';
-        return rep === '' || repField.includes(rep);
-      });
-
-      let listData = allRepData.filter(item => {
-        const matchType = type === '' || (item['檔案類別'] && item['檔案類別'].includes(type));
-        const matchChart = currentChartCategoryFilter === '' || (item['歸納大分類'] && item['歸納大分類'].includes(currentChartCategoryFilter));
-
-        const repField = item['推推代表與團隊'] || item['推動代表與团队'] || item['推動代表與團隊'] || '';
-        const textToSearch = `${item['核心訴求與現況'] || ''} ${repField} ${item['地理標的'] || ''} ${item['分類標籤'] || ''}`.toLowerCase();
-        const matchKeyword = textToSearch.includes(keyword);
-
-        return matchType && matchKeyword && matchChart;
-      });
-
-      listData.sort((a, b) => {
-        const getScore = (str) => {
-          if(!str) return 0;
-          const s = String(str);
-          const m = s.match(/(?:中華民國)?(\d+)年(\d+)月(\d+)日/);
-          if (m) return parseInt(m[1]) * 10000 + parseInt(m[2]) * 100 + parseInt(m[3]);
-          const m2 = s.match(/第(\d+)屆第(\d+)次/);
-          if (m2) return parseInt(m2[1]) * 10000 + parseInt(m2[2]) * 100;
-          return 0;
-        };
-        const scoreA = getScore(a['屆次']);
-        const scoreB = getScore(b['屆次']);
-        return sortOrder === 'desc' ? (scoreB - scoreA) : (scoreA - scoreB);
-      });
-
-      const countEl = document.getElementById('filteredCount');
-      if (rep === '' && type === '' && keyword === '' && currentChartCategoryFilter === '') {
-        countEl.innerText = `資料庫總計：${listData.length} 筆案件`;
-      } else {
-        countEl.innerText = `篩選結果：共 ${listData.length} 筆案件`;
-      }
-
-      renderCards(listData);
-      updateChart(rep, allRepData, type);
-    }
-
-    function copyToClipboardAndShowModal(text) {
-      navigator.clipboard.writeText(text).then(() => {
-        openModal('aiModal');
-      }).catch(err => {
-        alert("無法複製到剪貼簿，請手動複製以下指令：\n\n" + text);
-      });
-    }
-
-    function generateBillPrompt(title) {
-      const prompt = `你是一位專業的地方議會監督助理，具備強大的網路搜尋能力。請幫我上網搜尋新竹縣竹北市以下市政議題的「最新處理進度」或相關新聞：\n\n議題：${title}\n\n請用白話文總結目前公所的執行狀況，如果網路上找不到任何後續更新，請直接告訴我「目前無最新公開資訊」。`;
-      copyToClipboardAndShowModal(prompt);
-    }
-
-    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-    function closeModal(event, id) { if (event.target.id === id || event.target.className === 'close-btn') document.getElementById(id).style.display = 'none'; }
-  </script>
-
+async function init(){
+  if(!API_URL.startsWith('https://script.google.com/')){$('data-container').innerHTML='<div class="empty">尚未設定 API 網址。請將程式碼中的 API_URL 替換為 ChatGPT版 Apps Script 部署網址。</div>';return;}
+  try{
+    const res=await fetch(API_URL);if(!res.ok)throw new Error('HTTP '+res.status);
+    const data=await res.json();records=Array.isArray(data.records)?data.records:[];summaries=Array.isArray(data.summaries)?data.summaries:[];
+    populateReps();renderOverview();applyFilters();
+  }catch(e){$('data-container').innerHTML='<div class="empty">資料載入失敗。請確認 Apps Script 已部署為「任何人可存取」，並檢查 API_URL 是否正確。</div>';$('count').textContent='資料載入失敗';}
+}
+init();
+</script>
 </body>
 </html>
