@@ -383,13 +383,13 @@ function renderInteractiveComparison(){
   ? {labels:rows.map(x=>x.name),datasets:[{label:'收錄案件量（筆）',data:rows.map(x=>x.cases),backgroundColor:rows.map((x,i)=>i===0?'#d69b3d':'#176b87'),borderRadius:5}]}
   : mode==='combined'
   ? {labels:rows.map(x=>x.name),datasets:[
-      {label:'樣本調整品質分數（/5）',data:rows.map(x=>x.score===null?null:Number(x.score.toFixed(2))),backgroundColor:'rgba(23,107,135,.72)',borderRadius:5,xAxisID:'x',yAxisID:'yScore',type:'bar'},
-      {label:'收錄案件量（筆）',data:rows.map(x=>x.cases),borderColor:'#d69b3d',backgroundColor:'#d69b3d',pointRadius:3,tension:.2,type:'line',yAxisID:'yCount'},
-      {label:'追問監督平均額外加分（/5轉換）',data:rows.map(x=>x.bonusAvg===null?null:Number(x.bonusAvg.toFixed(2))),borderColor:'#187f72',backgroundColor:'#187f72',pointRadius:3,tension:.2,type:'line',yAxisID:'yScore'}
+      {label:'樣本調整品質分數（/5）',data:rows.map(x=>x.score===null?null:Number(x.score.toFixed(2))),backgroundColor:'rgba(23,107,135,.72)',borderRadius:5,xAxisID:'xScore',yAxisID:'y',type:'bar'},
+      {label:'收錄案件量（筆）',data:rows.map(x=>x.cases),borderColor:'#d69b3d',backgroundColor:'#d69b3d',pointRadius:3,tension:.2,type:'line',xAxisID:'xCount',yAxisID:'y'},
+      {label:'追問監督平均額外加分（/5轉換）',data:rows.map(x=>x.bonusAvg===null?null:Number(x.bonusAvg.toFixed(2))),borderColor:'#187f72',backgroundColor:'#187f72',pointRadius:3,tension:.2,type:'line',xAxisID:'xScore',yAxisID:'y'}
     ]}
   : {labels:rows.map(x=>x.name),datasets:[{label:'樣本調整後監督品質（/5）',data:rows.map(x=>x.score===null?null:Number(x.score.toFixed(2))),backgroundColor:rows.map((x,i)=>i===0?'#d69b3d':'#176b87'),borderRadius:5}]};
  const scales=mode==='combined'
-  ? {x:{grid:{display:false},ticks:{color:chartTextColor()}},yScore:{position:'left',min:0,max:5,title:{display:true,text:'品質分數／加分',color:chartTextColor()},grid:{color:chartGridColor()},ticks:{color:chartTextColor()}},yCount:{position:'right',beginAtZero:true,title:{display:true,text:'案件量（筆）',color:chartTextColor()},grid:{drawOnChartArea:false},ticks:{color:chartTextColor()}}}
+  ? {xScore:{type:'linear',position:'bottom',min:0,max:5,title:{display:true,text:'品質分數／加分',color:chartTextColor()},grid:{color:chartGridColor()},ticks:{color:chartTextColor()}},xCount:{type:'linear',position:'top',beginAtZero:true,title:{display:true,text:'案件量（筆）',color:chartTextColor()},grid:{drawOnChartArea:false},ticks:{color:chartTextColor()}},y:{grid:{display:false},ticks:{color:chartTextColor()}}}
   : {x:{beginAtZero:true,...(mode==='quality'?{min:0,max:5}:{}),grid:{color:chartGridColor()},ticks:{color:chartTextColor()},title:{display:true,text:mode==='volume'?'收錄案件數（筆）':'樣本調整品質分數（/5）',color:chartTextColor()}},y:{grid:{display:false},ticks:{color:chartTextColor()}}};
  interactiveCompareChart=new Chart($('interactiveCompareChart'),{type:'bar',data:chartData,options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,onClick:(evt,elements)=>{if(elements.length)renderCompareDetail(rows[elements[0].index].name,type,stats);},scales,plugins:{legend:{display:mode==='combined',labels:{color:chartTextColor()}},tooltip:{callbacks:{afterLabel:c=>{const r=rows[c.dataIndex];return mode==='volume'?('收錄案件：'+r.cases+'筆；有效評分：'+r.n+'筆'):('有效評分案件：'+r.n+'筆；原始平均：'+(r.raw===null?'無':r.raw.toFixed(2))+(mode==='combined'?'；追問加分有效樣本：'+r.followN+'筆':'')+'；點擊查看評分依據');}}}}});
  if(rows.length)renderCompareDetail(rows.find(x=>x.n>0)?.name||rows[0].name,type,stats);
