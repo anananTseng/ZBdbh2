@@ -106,6 +106,23 @@
     .ai-link-btn { padding: 10px 20px; text-decoration: none; color: white; border-radius: 5px; font-weight: bold; text-align: center; }
     .gemini-btn { background-color: #1a73e8; }
     .chatgpt-btn { background-color: #10a37f; }
+  
+    /* v11 統計視覺化 */
+    .v11-wrap{background:#fff;padding:22px;border-radius:14px;margin-bottom:18px;box-shadow:0 4px 15px rgba(0,0,0,.05)}
+    .v11-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}
+    .v11-head h2{margin:0;color:#243746;font-size:1.25rem}
+    .v11-intro{color:#667784;font-size:.92rem;margin:8px 0 16px}
+    .v11-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+    .v11-tabs button{border:1px solid #ccd5dc;background:#f7f9fb;color:#34495e;padding:9px 13px;border-radius:8px;cursor:pointer}
+    .v11-tabs button.active{background:#2c3e50;color:#fff;border-color:#2c3e50}
+    .v11-chartbox{height:390px;position:relative;margin:12px 0}
+    .v11-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin:12px 0}
+    .v11-kpi{border:1px solid #e5eaee;border-radius:10px;padding:12px;background:#fbfcfd}
+    .v11-kpi b{display:block;font-size:1.35rem;color:#2c3e50}
+    .v11-kpi span{font-size:.82rem;color:#697987}
+    .v11-note{font-size:.82rem;color:#7b8790;line-height:1.6;border-top:1px solid #edf0f2;padding-top:10px}
+    @media(max-width:600px){.v11-chartbox{height:330px}.v11-wrap{padding:15px}}
+
   </style>
 </head>
 <body oncontextmenu="return false;" oncopy="return false;" oncut="return false;">
@@ -119,6 +136,17 @@
   </header>
 
   <div class="container">
+    <section class="v11-wrap" id="statisticsOverview">
+      <div class="v11-head"><h2>📊 代表監督表現｜總體比較</h2><span style="font-size:.8rem;color:#77838c">第十屆・統計視覺化</span></div>
+      <p class="v11-intro">先選擇比較角度，再點選圖表中的代表姓名，即可跳至該代表的案件資料。全體名單均納入；無紀錄者以「資料不足」標示，不以零分直接定性。</p>
+      <div class="v11-tabs" id="v11Tabs">
+        <button class="active" data-mode="quality">品質比較</button><button data-mode="volume">案件量／參與比較</button><button data-mode="combined">三層綜合比較</button>
+      </div>
+      <div class="v11-kpis" id="v11Kpis"></div>
+      <div class="v11-chartbox"><canvas id="v11CompareChart"></canvas></div>
+      <div class="v11-note" id="v11MethodNote">評分為既有摘要資料之參考指標；案件數與案件品質分開閱讀。資料量較少的代表，評分解讀需保留。</div>
+    </section>
+
     <div class="dashboard-section">
       <div class="filter-row">
         <select id="repFilter" style="flex: 1 1 180px;"></select>
@@ -243,13 +271,45 @@
           const repField = item['推動代表與團隊'] || item['推動代表與团队'] || '';
           return !repField.includes('市長');
         });
-        summaryData = data.summaries || [];
+        summaryData = data.summaries || [];\n        v11Render();
         populateRepDropdown(allData);
         filterData(); 
       })
       .catch(error => {
         document.getElementById('data-container').innerHTML = '<div class="loading" style="color: #e74c3c;">資料載入失敗，請檢查網址或稍後再試。</div>';
       });
+
+    
+    // v11 三種統計視角，以既有 API summaries 為資料來源
+    const v11Roster = [
+      "戴佩如","彭竣志","范格菱","張美珠","曾玉菱","林維洲","陳秀玲","林祺烜","陳禹同",
+      "林啟賢主席","何宜芯","鄭建村","游雅婷","曾美琴","徐水鐘","邵啟月",
+      "葉信輝副主席","鄭慶源","曾祐宸","蔡文苑"
+    ];
+    let v11Mode = "quality"; let v11Chart = null;
+    function v11Number(value){ const n=parseFloat(String(value??"").replace(/[^0-9.\-]/g,"")); return Number.isFinite(n)?n:null; }
+    function v11GetSummary(name){ return summaryData.find(s=>String(s["代表姓名"]||"").trim()===name) || null; }
+    function v11Metric(name, mode){
+      const s=v11GetSummary(name); if(!s) return null;
+      const q=v11Number(s["提案總數"])||0, ask=v11Number(s["質詢總數"])||0;
+      if(mode==="volume") return q+ask;
+      const score=v11Number(s["綜合評分"]); return score;
+    }
+    function v11Render(){
+      const labels=v11Roster; const vals=labels.map(n=>v11Metric(n,v11Mode));
+      const measured=vals.filter(v=>v!==null); const kpis=document.getElementById("v11Kpis");
+      const totalCases=labels.reduce((sum,n)=>{const s=v11GetSummary(n);return sum+(v11Number(s?.["提案總數"])||0)+(v11Number(s?.["質詢總數"])||0)},0);
+      const active=vals.filter(v=>v!==null && v>0).length;
+      kpis.innerHTML=`<div class="v11-kpi"><b>${labels.length}</b><span>完整代表名單</span></div><div class="v11-kpi"><b>${totalCases}</b><span>摘要統計案件量</span></div><div class="v11-kpi"><b>${active}/${labels.length}</b><span>有可用指標資料</span></div><div class="v11-kpi"><b>${measured.length?Math.round(measured.reduce((a,b)=>a+b,0)/measured.length*10)/10:"—"}</b><span>${v11Mode==="volume"?"每位代表平均案件量":"有資料者平均參考分"}</span></div>`;
+      const colors=vals.map(v=>v===null?"rgba(180,190,198,.45)":(v===0?"rgba(180,190,198,.55)":"rgba(52,152,219,.78)"));
+      if(v11Chart) v11Chart.destroy();
+      v11Chart=new Chart(document.getElementById("v11CompareChart").getContext("2d"),{type:"bar",data:{labels,datasets:[{label:v11Mode==="volume"?"案件量":"既有綜合評分",data:vals,backgroundColor:colors,borderColor:"rgba(44,62,80,.35)",borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:"y",plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.raw===null?"資料不足":(v11Mode==="volume"?c.raw+" 件":c.raw+" 分")}}},scales:{x:{beginAtZero:true,title:{display:true,text:v11Mode==="volume"?"案件筆數":"摘要參考分數"}},y:{ticks:{autoSkip:false,font:{size:11}}}},onClick:(e,els)=>{if(els.length){const name=labels[els[0].index];const select=document.getElementById("repFilter");select.value=name;filterData(false);document.getElementById("data-container").scrollIntoView({behavior:"smooth",block:"start"});}}}});
+      const note=document.getElementById("v11MethodNote");
+      if(v11Mode==="quality") note.textContent="品質比較：使用 API 摘要中的既有「綜合評分」作為品質參考，並非本頁重新計分。未有評分者顯示資料不足；分數與案件量應分開理解。";
+      else if(v11Mode==="volume") note.textContent="案件量／參與比較：提案總數＋質詢總數，呈現已收錄案件量，不等同問政品質。資料以 API 摘要欄位為準。";
+      else note.textContent="三層綜合比較：目前先以既有綜合評分呈現總覽入口。品質、持續參與與追蹤加分的新版細項欄位若尚未由資料源提供，本頁不自行推算或杜撰。";
+    }
+    document.querySelectorAll("#v11Tabs button").forEach(btn=>btn.addEventListener("click",()=>{document.querySelectorAll("#v11Tabs button").forEach(b=>b.classList.remove("active"));btn.classList.add("active");v11Mode=btn.dataset.mode;v11Render();}));
 
     function populateRepDropdown(data) {
       const repFilter = document.getElementById('repFilter');
