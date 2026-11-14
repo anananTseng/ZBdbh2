@@ -429,6 +429,7 @@ function buildCrossTypeGapData(){
       return {name:rep,...x};
     });
     assignCompetitionRanks(rows,'count');
+    rows.forEach(item=>{item.volumeRank=item.countRank;});
     // Assign ranks by adjusted quality while preserving the null state for unassessed representatives.
     const qualityRows=rows.filter(x=>x.adjusted!==null);
     qualityRows.forEach(item=>item.qualityRank=1+qualityRows.filter(other=>other.adjusted>item.adjusted+1e-8).length);
