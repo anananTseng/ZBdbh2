@@ -486,9 +486,13 @@ function renderDeepAnalysis(){
   const proposalByName=new Map(proposalRows.map(row=>[row.name,row]));
   const questionByName=new Map(questionRows.map(row=>[row.name,row]));
   const largeGaps=[];
-  proposalRows.concat(questionRows).forEach(row=>{
+  proposalRows.forEach(row=>{
     const gap=deepGap(row);
-    if(gap!==null&&Math.abs(gap)>=3)largeGaps.push({row,gap});
+    if(gap!==null&&Math.abs(gap)>=3)largeGaps.push({row,gap,type:'正式提案'});
+  });
+  questionRows.forEach(row=>{
+    const gap=deepGap(row);
+    if(gap!==null&&Math.abs(gap)>=3)largeGaps.push({row,gap,type:'市政質詢'});
   });
   largeGaps.sort((a,b)=>Math.abs(b.gap)-Math.abs(a.gap));
   const volumeAhead=largeGaps.find(item=>item.gap>0);
@@ -497,13 +501,13 @@ function renderDeepAnalysis(){
   insights.appendChild(deepInsightCard(
     '最明顯的「量領先質」落差',
     volumeAhead
-      ?volumeAhead.row.name+'｜案件量第'+volumeAhead.row.volumeRank+'名、品質第'+volumeAhead.row.qualityRank+'名（名次差 '+volumeAhead.gap+'）'
+      ?volumeAhead.row.name+'｜'+volumeAhead.type+'：量第'+volumeAhead.row.volumeRank+'名、品質第'+volumeAhead.row.qualityRank+'名（名次差 '+volumeAhead.gap+'）'
       :'目前沒有量排名領先品質排名達3名以上的情形。'
   ));
   insights.appendChild(deepInsightCard(
     '最明顯的「質領先量」案例',
     qualityAhead
-      ?qualityAhead.row.name+'｜案件量第'+qualityAhead.row.volumeRank+'名、品質第'+qualityAhead.row.qualityRank+'名（名次差 '+Math.abs(qualityAhead.gap)+'）'
+      ?qualityAhead.row.name+'｜'+qualityAhead.type+'：量第'+qualityAhead.row.volumeRank+'名、品質第'+qualityAhead.row.qualityRank+'名（名次差 '+Math.abs(qualityAhead.gap)+'）'
       :'目前沒有品質排名領先量排名達3名以上的情形。'
   ));
   insights.appendChild(deepInsightCard(
@@ -599,13 +603,13 @@ function renderRepPanel(rep){
     card.append(strong,span);highlights.appendChild(card);
   });
   box.appendChild(highlights);
+  const details=document.createElement('details');details.className='summary-details';
+  const summaryToggle=document.createElement('summary');summaryToggle.textContent='展開AI摘要、評分指標與補充資料';
+  details.appendChild(summaryToggle);
   const aiNote=document.createElement('div');aiNote.className='summary-ai';
   const aiTitle=document.createElement('strong');aiTitle.textContent='AI整理觀察（請對照案件原文）';
   const aiText=document.createElement('p');aiText.textContent=summary?text(summary['問政風格評析'],'目前沒有摘要'):'目前沒有摘要';
-  aiNote.append(aiTitle,aiText);box.appendChild(aiNote);
-  const details=document.createElement('details');details.className='summary-details';
-  const summaryToggle=document.createElement('summary');summaryToggle.textContent='展開評分指標與補充資料';
-  details.appendChild(summaryToggle);
+  aiNote.append(aiTitle,aiText);details.appendChild(aiNote);
   const detailList=document.createElement('div');detailList.className='summary-detail-list';
   const detailItems=[
     ['問題界定平均',summary?summary['問題界定平均']+'/5':'尚無資料'],
