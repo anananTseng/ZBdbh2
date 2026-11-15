@@ -65,7 +65,7 @@ footer{max-width:1180px;margin:auto;padding:0 16px 35px;color:var(--muted);font-
 .compare-modal{width:min(1120px,100%);max-height:92vh;overflow:auto;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:0 24px 70px rgba(0,0,0,.3)}
 .modal-head{position:sticky;top:-20px;background:var(--card);z-index:2;padding:8px 0 12px;display:flex;justify-content:space-between;gap:10px;align-items:center;border-bottom:1px solid var(--line)}
 .compare-layout{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(280px,.8fr);gap:16px;margin-top:16px}
-.compare-chart{height:460px;position:relative}.compare-detail{background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:14px;min-width:0}
+.compare-chart{height:620px;min-height:620px;position:relative}.compare-detail{background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:14px;min-width:0}
 .detail-dim{display:grid;grid-template-columns:1fr auto;gap:7px;border-bottom:1px solid var(--line);padding:9px 0}.detail-dim:last-child{border:0}
 .case-evidence{border:1px solid var(--line);border-radius:9px;padding:10px;margin-top:9px;background:var(--card)}
 .info-modal{width:min(760px,100%);max-height:90vh;overflow:auto;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:0 24px 70px rgba(0,0,0,.3)}
@@ -94,7 +94,7 @@ footer{max-width:1180px;margin:auto;padding:0 16px 35px;color:var(--muted);font-
 .deep-observation p{margin:0 0 6px}
 .deep-method{margin-top:10px;line-height:1.55}
 @media(max-width:800px){.deep-highlights{grid-template-columns:1fr}.deep-table{min-width:1000px}}
-@media(max-width:800px){.compare-layout{grid-template-columns:1fr}.compare-chart{height:360px}.modal-backdrop{padding:6px}.compare-modal{padding:12px;max-height:96vh}}
+@media(max-width:800px){.compare-layout{grid-template-columns:1fr}.compare-chart{height:700px;min-height:700px}.modal-backdrop{padding:6px}.compare-modal{padding:12px;max-height:96vh}}
 @media(max-width:800px){.filter-grid{grid-template-columns:1fr 1fr}.kpis{grid-template-columns:1fr 1fr}.analysis-grid,.dashboard-grid{grid-template-columns:1fr}.cards{grid-template-columns:1fr}}
 @media(max-width:480px){.filter-grid{grid-template-columns:1fr}.panel{padding:15px}.container{padding:14px 10px 35px}.kpi .num{font-size:1.55rem}}
 </style>
@@ -167,7 +167,7 @@ footer{max-width:1180px;margin:auto;padding:0 16px 35px;color:var(--muted);font-
         <div class="deep-table-wrap"><table class="deep-table" aria-label="20席代表正式提案與市政質詢量質深度比較"><thead><tr><th>代表</th><th>正式提案｜案件量</th><th>正式提案｜品質</th><th>市政質詢｜案件量</th><th>市政質詢｜品質</th><th>交叉觀察</th></tr></thead><tbody id="deepComparisonBody"></tbody></table></div>
         <p class="small deep-method">品質分數依原有評分標準計算：問題界定25%、證據準備30%、具體訴求45%，再依有效評分案件數作樣本調整；不含質詢追問加分，避免把不同性質的指標混在一起。表內另列有效評分筆數及原始平均。案件量依資料庫中歸屬到該代表的紀錄計算，共同提案可能分別列入各提案人。主席林啟賢與副主席葉信輝都有主持議事職務，口頭質詢件數不宜直接和一般代表比較。沒有可比較評分者不排名、不以0分代替。</p>
       </section>
-      <div class="compare-layout" id="compareLayout"><div class="chart-panel"><div class="compare-chart"><canvas id="interactiveCompareChart"></canvas></div><p class="small">圖表可點選代表。品質分數為主，追問監督只作額外加分；樣本數收縮降低少量高分樣本的排名不穩定。無公開紀錄者仍列入完整名冊，但不虛構分數。</p></div>
+      <div class="compare-layout" id="compareLayout"><div class="chart-panel"><div class="compare-chart"><canvas id="interactiveCompareChart"></canvas></div><p class="small">圖表列出完整20席，姓名不再自動略過；視窗較矮時可在比較視窗內上下捲動。點選代表可查看評分依據。品質分數為主，追問監督只作額外加分；無公開紀錄者仍列入完整名冊，但不虛構分數。</p></div>
       <aside id="compareDetail" class="compare-detail"><h3>選擇一位代表</h3><p class="small">右側將說明其分數如何形成，以及哪些案件提供了評分依據。</p></aside></div>
       <div class="method-note"><strong>評分規則摘要：</strong>提案與質詢均以問題界定（25%）、證據準備（30%）、具體訴求（45%）為品質核心；質詢的追問監督僅作額外加分（最高 +0.30/5），不是必要條件。提案不適用追問加分。官員承諾與政府回覆品質獨立呈現，不加減代表分數。資料未載明，不推定未做。</div>
     </section>
@@ -592,8 +592,8 @@ function renderInteractiveComparison(){
     ]}
   : {labels:rows.map(x=>x.name),datasets:[{label:'樣本調整後監督品質（/5）',data:rows.map(x=>x.score===null?null:Number(x.score.toFixed(2))),backgroundColor:rows.map((x,i)=>i===0?'#d69b3d':'#176b87'),borderRadius:5}]};
  const scales=mode==='combined'
-  ? {xScore:{type:'linear',position:'bottom',min:0,max:5,title:{display:true,text:'品質分數／加分',color:chartTextColor()},grid:{color:chartGridColor()},ticks:{color:chartTextColor()}},xCount:{type:'linear',position:'top',beginAtZero:true,title:{display:true,text:'案件量（筆）',color:chartTextColor()},grid:{drawOnChartArea:false},ticks:{color:chartTextColor()}},y:{grid:{display:false},ticks:{color:chartTextColor()}}}
-  : {x:{beginAtZero:true,...(mode==='quality'?{min:0,max:5}:{}),grid:{color:chartGridColor()},ticks:{color:chartTextColor()},title:{display:true,text:mode==='volume'?'收錄案件數（筆）':'樣本調整品質分數（/5）',color:chartTextColor()}},y:{grid:{display:false},ticks:{color:chartTextColor()}}};
+  ? {xScore:{type:'linear',position:'bottom',min:0,max:5,title:{display:true,text:'品質分數／加分',color:chartTextColor()},grid:{color:chartGridColor()},ticks:{color:chartTextColor()}},xCount:{type:'linear',position:'top',beginAtZero:true,title:{display:true,text:'案件量（筆）',color:chartTextColor()},grid:{drawOnChartArea:false},ticks:{color:chartTextColor()}},y:{grid:{display:false},ticks:{color:chartTextColor(),autoSkip:false,maxTicksLimit:20,font:{size:11},padding:5}}}
+  : {x:{beginAtZero:true,...(mode==='quality'?{min:0,max:5}:{}),grid:{color:chartGridColor()},ticks:{color:chartTextColor()},title:{display:true,text:mode==='volume'?'收錄案件數（筆）':'樣本調整品質分數（/5）',color:chartTextColor()}},y:{grid:{display:false},ticks:{color:chartTextColor(),autoSkip:false,maxTicksLimit:20,font:{size:11},padding:5}}};
  interactiveCompareChart=new Chart($('interactiveCompareChart'),{type:'bar',data:chartData,options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,onClick:(evt,elements)=>{if(elements.length)renderCompareDetail(rows[elements[0].index].name,type,stats);},scales,plugins:{legend:{display:mode==='combined',labels:{color:chartTextColor()}},tooltip:{callbacks:{afterLabel:c=>{const r=rows[c.dataIndex];return mode==='volume'?('收錄案件：'+r.cases+'筆；有效評分：'+r.n+'筆'):('有效評分案件：'+r.n+'筆；原始平均：'+(r.raw===null?'無':r.raw.toFixed(2))+(mode==='combined'?'；追問加分有效樣本：'+r.followN+'筆':'')+'；點擊查看評分依據');}}}}}});
  if(rows.length)renderCompareDetail(rows.find(x=>x.n>0)?.name||rows[0].name,type,stats);
  else $('compareDetail').innerHTML='<h3>目前沒有資料</h3><p class="small">完整20席名冊仍保留；無資料者不虛構分數。</p>';
