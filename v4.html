@@ -327,7 +327,7 @@ function renderCards(list){
     track.addEventListener('click',async()=>{
       const title=text(item['核心訴求與現況'],'未提供案件摘要');
       const prompt=`請協助搜尋新竹縣竹北市以下議題的最新處理進度或公開新聞，並列出來源與日期。若沒有可靠的後續公開資訊，請明確說明。\n議題：${title}`;
-      try{await navigator.clipboard.writeText(prompt);track.textContent='查詢文字已複製';setTimeout(()=>track.textContent='複製後續進度查詢文字',1600);}
+      try{await copyPlainText(prompt);track.textContent='查詢文字已複製';setTimeout(()=>track.textContent='複製後續進度查詢文字',1800);}
       catch(e){window.prompt('請手動複製以下指令：',prompt);}
     });actions.appendChild(track);card.appendChild(actions);wrap.appendChild(card);
   });
@@ -698,7 +698,18 @@ $('closeCompare').addEventListener('click',closeCompareModal);
 $('compareBackdrop').addEventListener('click',e=>{if(e.target===$('compareBackdrop'))closeCompareModal();});
 $('compareType').addEventListener('change',renderInteractiveComparison);
 $('compareMode').addEventListener('change',renderInteractiveComparison);
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeCompareModal();});
+function openInfoModal(id){$(id).classList.remove('hidden');}
+function closeInfoModals(){['userGuide','siteStatement'].forEach(id=>$(id).classList.add('hidden'));}
+$('openUserGuide').addEventListener('click',()=>openInfoModal('userGuide'));
+$('openSiteStatement').addEventListener('click',()=>openInfoModal('siteStatement'));
+document.querySelectorAll('[data-close-info]').forEach(button=>{
+  button.addEventListener('click',()=>$(button.dataset.closeInfo).classList.add('hidden'));
+});
+['userGuide','siteStatement'].forEach(id=>{
+  $(id).addEventListener('click',e=>{if(e.target===$(id))$(id).classList.add('hidden');});
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeCompareModal();closeInfoModals();}});
+document.addEventListener('contextmenu',e=>e.preventDefault());
 $('themeToggle').addEventListener('click',()=>{
   const current=document.documentElement.getAttribute('data-theme')||'light';
   applyTheme(current==='dark'?'light':'dark');
