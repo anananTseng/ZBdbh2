@@ -68,6 +68,13 @@ footer{max-width:1180px;margin:auto;padding:0 16px 35px;color:var(--muted);font-
 .compare-chart{height:460px;position:relative}.compare-detail{background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:14px;min-width:0}
 .detail-dim{display:grid;grid-template-columns:1fr auto;gap:7px;border-bottom:1px solid var(--line);padding:9px 0}.detail-dim:last-child{border:0}
 .case-evidence{border:1px solid var(--line);border-radius:9px;padding:10px;margin-top:9px;background:var(--card)}
+.info-modal{width:min(760px,100%);max-height:90vh;overflow:auto;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:0 24px 70px rgba(0,0,0,.3)}
+.info-modal .modal-head{top:-20px;margin-bottom:12px}
+.info-modal .method-note{color:var(--ink)}
+.case-evidence-disclosure{margin-top:14px;border:1px solid var(--line);border-radius:10px;padding:11px;background:var(--soft)}
+.case-evidence-disclosure>summary{cursor:pointer;font-weight:700;color:var(--blue)}
+.case-evidence-list{margin-top:9px}
+@media(max-width:600px){.info-modal{padding:13px;max-height:94vh}}
 .summary-copy p{margin:8px 0}
 .summary-primary p{padding:8px 10px;background:var(--kpi);border-radius:8px}
 .summary-secondary{margin-top:10px;border:1px solid var(--line);border-radius:9px;padding:9px 11px}
@@ -97,7 +104,7 @@ footer{max-width:1180px;margin:auto;padding:0 16px 35px;color:var(--muted);font-
   <div class="eyebrow">PUBLIC OVERSIGHT · INDEPENDENT DATASET</div>
   <h1>竹北市代表會｜議事監督資料庫</h1>
   <p class="subtitle">以案件為單位整理提案與市政質詢，從議題、監督表現與政府回應三個面向，讓公開議事資料更容易理解、比較與追蹤。</p>
-  <div class="row-between" style="justify-content:flex-start;margin-top:12px;flex-wrap:wrap"><button id="themeToggle" class="secondary" type="button" aria-label="切換黑白底色">切換黑底</button><a class="secondary" href="#userGuide">操作指南</a><a class="secondary" href="#siteStatement">網站聲明</a></div>
+  <div class="row-between" style="justify-content:flex-start;margin-top:12px;flex-wrap:wrap"><button id="themeToggle" class="secondary" type="button" aria-label="切換黑白底色">切換黑底</button><button id="openUserGuide" class="secondary" type="button">操作指南</button><button id="openSiteStatement" class="secondary" type="button">網站聲明</button></div>
 </div></header>
 <main class="container">
   <section class="panel">
@@ -113,36 +120,34 @@ footer{max-width:1180px;margin:auto;padding:0 16px 35px;color:var(--muted);font-
     </div>
   </section>
 
-  <section id="userGuide" class="panel">
-    <details><summary><strong>操作指南｜如何閱讀與使用本網站</strong></summary>
+  <div id="userGuide" class="modal-backdrop hidden info-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="userGuideTitle">
+    <section class="info-modal">
+      <div class="modal-head"><h2 id="userGuideTitle">操作指南</h2><button class="secondary" type="button" data-close-info="userGuide">關閉</button></div>
       <div class="method-note">
-        <p><strong>1. 全體代表總體比較</strong>：開啟「20席｜全部案件總體比較」，預設比較正式提案與市政質詢的全部收錄案件。圖表點選代表，可檢視原始平均、樣本調整分數、有效案件數及個案評分依據。</p>
-        <p><strong>2. 篩選案件</strong>：可依代表、案件類型、日期排序或關鍵字查詢會期、議題、地點及案件內容。</p>
-        <p><strong>3. 閱讀分數</strong>：分數以案件品質為核心；提案依書面問題界定、證據及訴求具體度評估。質詢亦以三項品質指標為主，追問監督只作額外加分，不是必要條件。</p>
-        <p><strong>4. 理解樣本調整</strong>：有效評分案件較少者，排名分數會向同類比較的整體平均適度收縮，以降低少量高分造成的偏差。請同時看原始平均及有效案件數。</p>
-        <p><strong>5. 完整席次</strong>：網站固定列出20席代表。主席林啟賢主要主持會議，不以一般代表的口頭質詢次數衡量；無紀錄或不適用的項目不強行給分。</p>
-        <p><strong>6. 量質深度比較</strong>：在總體比較中選擇「深度比較（量與質）」，可同時查看20席代表的正式提案與市政質詢案件量、品質分數及各自排名。不同類型分開計算，不用單一總分掩蓋差異。</p>
-        <p><strong>7. 核對原始資料</strong>：AI摘要及評分可供快速閱讀，重要判斷請點開原始文書自行核對。</p>
+        <p>上方可依代表、案件類型或關鍵字篩選。選擇個別代表後，頁面會顯示該代表的案件概況；選回「所有代表」或按「清除篩選」，即可回到全體資料。</p>
+        <p>按「查看20席｜全部案件總體比較」，可切換品質、案件量、綜合及「深度比較（量與質）」。深度比較把正式提案與市政質詢分開看，避免總分掩蓋差異。</p>
+        <p>在比較圖表中點選代表，可看分數拆解；點開「評分案例與文本依據」，可查看個案評分理由。</p>
+        <p>案件卡片下方：「複製案件網址」可貼給別人；「開啟分享」會呼叫手機或瀏覽器的分享功能；「複製後續進度查詢文字」可貼到 ChatGPT 或搜尋引擎查找最新進度。</p>
+        <p>品質分數依問題界定、證據準備及具體訴求評估。樣本調整是為避免少數案件造成排名過度波動；請同時看原始平均及有效評分筆數。</p>
+        <p>主席林啟賢與副主席葉信輝都有主持議事的職務，尤其口頭質詢件數不宜直接與一般代表比較。沒有收錄或無法評分，不代表一定沒有服務或追蹤。</p>
       </div>
-    </details>
-  </section>
-  <section id="siteStatement" class="panel">
-    <details><summary><strong>網站聲明｜資料範圍、評分限制與使用原則</strong></summary>
+    </section>
+  </div>
+  <div id="siteStatement" class="modal-backdrop hidden info-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="siteStatementTitle">
+    <section class="info-modal">
+      <div class="modal-head"><h2 id="siteStatementTitle">網站聲明</h2><button class="secondary" type="button" data-close-info="siteStatement">關閉</button></div>
       <div class="method-note">
-        <p>本網站整理竹北市民代表會公開議事文件，使用 AI 輔助摘要、分類與評估，目的在於提升公開資料的可讀性與可比較性，並非官方評鑑或對代表整體能力、人格及服務成果的定論。</p>
-        <p>資料涵蓋範圍受已取得的公開文件及其記載內容限制。未收錄、未記載或無法評估，不代表代表未曾服務、私下追蹤或履行職責。主席主持會議的職務性質與一般代表口頭質詢不同，相關數據不宜直接類比。</p>
-        <p>分數僅依文件中可辨識的監督品質評估；樣本數收縮為統計上的排名穩定調整，並非能力真值。追問監督為質詢的額外加分項，提案不適用。政府答覆品質、承諾與實際履約另行觀察，不直接替代表加減分。</p>
-        <p>AI可能發生辨識、摘要、姓名匹配、分類或評分錯誤。共同提案、姓名別稱及文書格式亦可能影響統計。網站內容不取代原始文書，任何錯誤或補充均應以可核對資料為依據。</p>
-        <p><strong>數量與品質必須分開閱讀：</strong>案件數量直接反映目前資料庫所收錄的公開參與紀錄，是重要的監督參考，但不等於案件品質、議題難度或最終成效。案件量高不代表品質一定高；品質分數高，也不代表參與量一定多。單一綜合分數或排名不能取代分項比較。</p>
-        <p><strong>深度比較的目的：</strong>透過正式提案與市政質詢的案件量、品質分數及排名差異，讓代表之間看見可學習之處，也避免只看總分或案件數就下結論。共同提案可能按人分列，數量是資料庫中的代表參與筆數，不等於不重複案件數。</p>
-        <p><strong>評論原則：</strong>網站可能提出直接、尖銳甚至帶有批判性的觀察，但評論只針對資料呈現的差距、案件內容與評分結果；不推論代表的人格、動機，也不將資料不足當成未履職的證明。</p>
-        <p><strong>AI觀察的限制：</strong>所有文字評論均為AI依目前收錄資料產生的觀察，可能錯誤、偏頗或過度概括。重要判斷應回到原始會議紀錄、提案文書及政府資料查證。本網站不是官方評鑑，也不能完整代表代表的服務情形。</p>
+        <p>本網站整理公開議事文件，使用 AI 協助摘要、分類及評分，並非官方評鑑，也不是對代表整體服務的完整判定。</p>
+        <p><strong>案件量不等於品質。</strong>案件數反映資料庫收錄的參與紀錄；案件多，不代表品質一定好。品質分數也不能單獨代表服務成果，請勿只看單一總分或排名。</p>
+        <p>AI評論可以直接，也可能有錯或說得太滿。評論只針對資料中看得到的案件與差距，不推測代表的人格或動機。重要判斷請回到原始文書查證。</p>
+        <p>共同提案可能分別計入各代表的參與筆數。資料沒記載，不代表沒有做；政府承諾也不等於已經履行。政府回應品質另行呈現，不直接加減代表分數。</p>
+        <p>主席林啟賢與副主席葉信輝都有主持議事的職務，尤其口頭質詢件數不宜直接與一般代表比較。</p>
       </div>
-    </details>
-  </section>
+    </section>
+  </div>
   <section id="overview" class="panel hidden">
     <div class="row-between"><div><h2>全體代表監督概況｜全部案件</h2><p class="small">以全部案件作為預設比較，先看20席代表的公開監督紀錄，再點選代表檢視評分與個案依據。</p></div><button id="openCompare" class="compare-open" type="button">查看20席｜全部案件總體比較</button></div>
-    <div class="kpis" style="margin-top:14px">
+    <div id="overviewKpis" class="kpis" style="margin-top:14px">
       <div class="kpi"><span class="num" id="totalCases">—</span><span class="label">收錄案件紀錄</span></div>
       <div class="kpi"><span class="num" id="totalQ">—</span><span class="label">市政質詢</span></div>
       <div class="kpi"><span class="num" id="totalP">—</span><span class="label">正式提案</span></div>
