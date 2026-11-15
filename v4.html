@@ -237,30 +237,49 @@ function caseShareKey(item){
   return h1.toString(36).padStart(7,'0')+h2.toString(36).padStart(7,'0');
 }
 function caseShareUrl(item){
+  if(location.protocol!=='https:'&&location.protocol!=='http:')return null;
   const u=new URL(location.href);
   u.search='';u.hash='';
   u.searchParams.set('case',caseShareKey(item));
   return u.toString();
 }
+async function copyPlainText(value){
+  if(navigator.clipboard&&window.isSecureContext){
+    await navigator.clipboard.writeText(value);return true;
+  }
+  const field=document.createElement('textarea');
+  field.value=value;field.setAttribute('readonly','');
+  field.style.position='fixed';field.style.opacity='0';field.style.pointerEvents='none';
+  document.body.appendChild(field);field.select();
+  let copied=false;
+  try{copied=document.execCommand('copy');}finally{field.remove();}
+  if(!copied)throw new Error('瀏覽器不允許自動複製');
+  return true;
+}
 function addCaseShareActions(actions,item){
   const url=caseShareUrl(item);
-  const copy=document.createElement('button');copy.className='secondary';copy.textContent='複製案件連結';
+  const unavailable=()=>alert('目前是本機檔案，無法產生可供他人開啟的公開網址。請先將 v4.html 發佈到網站，再使用分享功能。');
+  const copy=document.createElement('button');copy.className='secondary';
+  copy.textContent='複製案件網址';copy.title='複製後可貼到 LINE、Facebook 或訊息中';
   copy.addEventListener('click',async()=>{
-    try{await navigator.clipboard.writeText(url);copy.textContent='連結已複製';}
-    catch(e){window.prompt('請手動複製案件連結：',url);}
-    setTimeout(()=>copy.textContent='複製案件連結',1800);
+    if(!url){unavailable();return;}
+    try{await copyPlainText(url);copy.textContent='網址已複製';}
+    catch(e){window.prompt('請手動複製案件網址：',url);}
+    setTimeout(()=>copy.textContent='複製案件網址',1800);
   });
   actions.appendChild(copy);
-  const share=document.createElement('button');share.className='secondary';share.textContent='分享案件';
+  const share=document.createElement('button');share.className='secondary';
+  share.textContent='開啟分享';share.title='呼叫手機或瀏覽器的分享功能；不支援時會改為複製網址';
   share.addEventListener('click',async()=>{
+    if(!url){unavailable();return;}
     const title=text(item['核心訴求與現況'],'竹北市民代表監督案件');
     const shareData={title:'竹北市民代表監督｜案件分享',text:title,url};
-    if(navigator.share){
-      try{await navigator.share(shareData);}catch(e){if(e&&e.name!=='AbortError')window.prompt('請手動複製案件連結：',url);}
+    if(typeof navigator.share==='function'&&window.isSecureContext){
+      try{await navigator.share(shareData);}
+      catch(e){if(e&&e.name!=='AbortError'){try{await copyPlainText(url);alert('分享功能無法使用，案件網址已複製。');}catch(err){window.prompt('請手動複製案件網址：',url);}}}
     }else{
-      try{await navigator.clipboard.writeText(url);share.textContent='連結已複製';}
-      catch(e){window.prompt('請手動複製案件連結：',url);}
-      setTimeout(()=>share.textContent='分享案件',1800);
+      try{await copyPlainText(url);alert('此瀏覽器不支援直接分享，案件網址已複製，可貼到 LINE 或其他訊息。');}
+      catch(e){window.prompt('請手動複製案件網址：',url);}
     }
   });
   actions.appendChild(share);
@@ -304,11 +323,11 @@ function renderCards(list){
     const actions=document.createElement('div');actions.className='actions';
     actions.appendChild(makeButtonLink('查看原始文書',item['資料來源']));
     addCaseShareActions(actions,item);
-    const track=document.createElement('button');track.className='secondary';track.textContent='複製追蹤指令';
+    const track=document.createElement('button');track.className='secondary';track.textContent='複製後續進度查詢文字';track.title='複製後貼到 ChatGPT 或搜尋引擎，查找這個議題的最新處理進度';
     track.addEventListener('click',async()=>{
       const title=text(item['核心訴求與現況'],'未提供案件摘要');
       const prompt=`請協助搜尋新竹縣竹北市以下議題的最新處理進度或公開新聞，並列出來源與日期。若沒有可靠的後續公開資訊，請明確說明。\n議題：${title}`;
-      try{await navigator.clipboard.writeText(prompt);track.textContent='已複製指令';setTimeout(()=>track.textContent='複製追蹤指令',1600);}
+      try{await navigator.clipboard.writeText(prompt);track.textContent='查詢文字已複製';setTimeout(()=>track.textContent='複製後續進度查詢文字',1600);}
       catch(e){window.prompt('請手動複製以下指令：',prompt);}
     });actions.appendChild(track);card.appendChild(actions);wrap.appendChild(card);
   });
