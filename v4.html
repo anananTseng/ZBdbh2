@@ -238,8 +238,7 @@ function caseShareKey(item){
 }
 function caseShareUrl(item){
   if(location.protocol!=='https:'&&location.protocol!=='http:')return null;
-  const u=new URL(location.href);
-  u.search='';u.hash='';
+  const u=new URL(location.origin+location.pathname);
   u.searchParams.set('case',caseShareKey(item));
   return u.toString();
 }
