@@ -162,10 +162,10 @@ footer{max-width:1180px;margin:auto;padding:0 16px 35px;color:var(--muted);font-
       <div class="modal-head"><div><h2 id="compareTitle">代表監督表現｜總體比較</h2><p class="small">點選圖表中的代表，可查看分數組成、樣本數與案件依據。分數不等於代表全部服務能力。</p></div><button id="closeCompare" class="secondary" type="button">關閉</button></div>
       <div class="row-between" style="margin-top:14px;gap:10px;flex-wrap:wrap"><label for="compareMode" class="small">比較指標</label><select id="compareMode" style="max-width:280px"><option value="quality">品質比較（樣本調整）</option><option value="volume">案件量／參與比較</option><option value="combined">三層綜合比較（品質・參與・追問加分）</option><option value="deep">深度比較（量與質）</option></select><label for="compareType" class="small">案件類型</label><select id="compareType" style="max-width:240px"><option value="all" selected>全部案件（首頁預設）</option><option value="質詢">市政質詢（口頭監督）</option><option value="提案">正式提案（書面評估）</option></select></div>
       <section id="deepComparisonPanel" class="chart-panel hidden" style="margin-top:16px">
-        <div class="row-between"><div><h3>20席代表｜量與質深度比較</h3><p class="small">同時比較全部正式提案與市政質詢。每一類型分開計算案件量排名與品質排名；此頁固定使用全部資料，不受案件類型篩選影響。</p></div></div>
+        <div class="row-between"><div><h3>20席代表｜量與質深度比較</h3><p class="small">同時比較全部正式提案與市政質詢。每一類型分開計算案件量排名與品質排名；此頁固定使用全部資料，不受案件類型篩選影響。主席林啟賢與副主席葉信輝都有主持議事職務，兩人的口頭質詢件數不宜直接和一般代表比較。</p></div></div>
         <div id="deepComparisonHighlights" class="deep-highlights"></div>
         <div class="deep-table-wrap"><table class="deep-table" aria-label="20席代表正式提案與市政質詢量質深度比較"><thead><tr><th>代表</th><th>正式提案｜案件量</th><th>正式提案｜品質</th><th>市政質詢｜案件量</th><th>市政質詢｜品質</th><th>交叉觀察</th></tr></thead><tbody id="deepComparisonBody"></tbody></table></div>
-        <p class="small deep-method">品質分數依原有評分標準計算：問題界定25%、證據準備30%、具體訴求45%，再依有效評分案件數作樣本調整；不含質詢追問加分，避免把不同性質的指標混在一起。表內另列有效評分筆數及原始平均。案件量依資料庫中歸屬到該代表的紀錄計算，共同提案可能分別列入各提案人。沒有可比較評分者不排名、不以0分代替。</p>
+        <p class="small deep-method">品質分數依原有評分標準計算：問題界定25%、證據準備30%、具體訴求45%，再依有效評分案件數作樣本調整；不含質詢追問加分，避免把不同性質的指標混在一起。表內另列有效評分筆數及原始平均。案件量依資料庫中歸屬到該代表的紀錄計算，共同提案可能分別列入各提案人。主席林啟賢與副主席葉信輝都有主持議事職務，口頭質詢件數不宜直接和一般代表比較。沒有可比較評分者不排名、不以0分代替。</p>
       </section>
       <div class="compare-layout" id="compareLayout"><div class="chart-panel"><div class="compare-chart"><canvas id="interactiveCompareChart"></canvas></div><p class="small">圖表可點選代表。品質分數為主，追問監督只作額外加分；樣本數收縮降低少量高分樣本的排名不穩定。無公開紀錄者仍列入完整名冊，但不虛構分數。</p></div>
       <aside id="compareDetail" class="compare-detail"><h3>選擇一位代表</h3><p class="small">右側將說明其分數如何形成，以及哪些案件提供了評分依據。</p></aside></div>
@@ -393,14 +393,17 @@ function renderCompareDetail(rep,type,stats){
  const dims=type==='提案'?PROPOSAL_DIMENSIONS:DIMENSIONS.filter(d=>d.weight>0);
  dims.forEach(d=>{const o=st.dimension[d.key],row=document.createElement('div');row.className='detail-dim';const left=document.createElement('span');left.textContent=`${d.label}（品質權重 ${Math.round(d.weight*100)}%）`;const right=document.createElement('strong');right.textContent=o&&o.n?`${(o.sum/o.n).toFixed(2)} / 5（${o.n}筆）`:'未評估';row.append(left,right);root.appendChild(row);});
  if(type!=='提案'){const o=st.dimension['追問監督分數'],row=document.createElement('div');row.className='detail-dim';const left=document.createElement('span');left.textContent='追問監督（額外加分，最高 +0.30）';const right=document.createElement('strong');right.textContent=o&&o.n?`${(o.sum/o.n).toFixed(2)} / 5（${o.n}筆）`:'未評估／無加分';row.append(left,right);root.appendChild(row);}
- const cap=document.createElement('h3');cap.style.marginTop='14px';cap.textContent='評分案例與文本依據';root.appendChild(cap);
+ const evidenceDetails=document.createElement('details');evidenceDetails.className='case-evidence-disclosure';
+ const evidenceSummary=document.createElement('summary');evidenceSummary.textContent='評分案例與文本依據（點擊展開）';evidenceDetails.appendChild(evidenceSummary);
+ const evidenceList=document.createElement('div');evidenceList.className='case-evidence-list';
  st.cases.slice().sort((a,b)=>dateScore(b)-dateScore(a)).slice(0,12).forEach(item=>{
   const box=document.createElement('div');box.className='case-evidence';
   const title=document.createElement('strong');title.textContent=`${text(item['屆次'],'會期未載')}｜${caseType(item)}｜${text(item['核心訴求與現況'],'未提供摘要').slice(0,100)}`;box.appendChild(title);
   const rationale=document.createElement('p');rationale.className='small';rationale.textContent=text(item['評分依據與限制'],'文件未提供具體評分依據');box.appendChild(rationale);
   const chips=document.createElement('p');chips.className='small';chips.textContent=dims.map(d=>`${d.label}: ${numericScore(item[d.key])===null?'未評估':numericScore(item[d.key])}`).join('｜')+(caseType(item)==='質詢'?`｜追問加分項: ${numericScore(item['追問監督分數'])===null?'未評估':numericScore(item['追問監督分數'])} / 5｜本案額外加分: +${weightedCaseScore(item)?.bonus.toFixed(2)??'0.00'}`:'');box.appendChild(chips);
-  root.appendChild(box);
+  evidenceList.appendChild(box);
  });
+ evidenceDetails.appendChild(evidenceList);root.appendChild(evidenceDetails);
 }
 
 function canonicalCompareRep(value){
@@ -452,15 +455,23 @@ function calculateDeepComparison(){
   });
   return byType;
 }
-function deepCategoryInsight(item,label){
-  if(!item.count)return label+'：目前資料庫沒有收錄紀錄。';
-  if(item.qualityRank===null)return label+'：有 '+item.count+' 筆紀錄，但沒有足夠的有效品質評分可供比較。';
-  const gap=item.qualityRank-item.volumeRank;
-  if(gap>=5)return label+'：案件量第'+item.volumeRank+'，品質第'+item.qualityRank+'，量的排名明顯領先品質；參與紀錄多，品質分數沒有同步反映。';
-  if(gap>=2)return label+'：案件量第'+item.volumeRank+'，品質第'+item.qualityRank+'，案件量排名領先品質排名，量的優勢尚未完全轉化為品質表現。';
-  if(gap<=-5)return label+'：案件量第'+item.volumeRank+'，品質第'+item.qualityRank+'，品質排名明顯領先案件量，值得參考其如何呈現監督品質。';
-  if(gap<=-2)return label+'：案件量第'+item.volumeRank+'，品質第'+item.qualityRank+'，品質排名優於案件量排名。';
-  return label+'：量與質的排名接近。';
+function deepCategoryInsight(item,label,rep){
+  if(!item.count)return label+'：目前沒有收錄案件。';
+  let note='';
+  if(item.qualityRank===null){
+    note=label+'：有 '+item.count+' 件，但目前沒有足夠評分，無法比較品質。';
+  }else{
+    const gap=item.qualityRank-item.volumeRank;
+    if(gap>=5)note=label+'：案件量第'+item.volumeRank+'，品質第'+item.qualityRank+'。案件做得多，但品質排名沒有跟上。';
+    else if(gap>=2)note=label+'：案件量第'+item.volumeRank+'，品質第'+item.qualityRank+'。案件量表現較好，品質還有進步空間。';
+    else if(gap<=-5)note=label+'：案件量第'+item.volumeRank+'，品質第'+item.qualityRank+'。案件數較少，但品質排名更好，值得其他代表參考。';
+    else if(gap<=-2)note=label+'：案件量第'+item.volumeRank+'，品質第'+item.qualityRank+'。品質排名比案件量更前面。';
+    else note=label+'：案件量第'+item.volumeRank+'，品質第'+item.qualityRank+'，兩者排名接近。';
+  }
+  if(label==='市政質詢'&&(rep==='林啟賢主席'||rep==='葉信輝副主席')){
+    note+='（主席與副主席負責主持議事，質詢件數不宜直接和一般代表相比。）';
+  }
+  return note;
 }
 function makeDeepMetricCell(main,sub){
   const td=document.createElement('td');
@@ -527,8 +538,8 @@ function renderDeepComparison(){
       q.qualityRank===null?'無品質排名':'品質第'+q.qualityRank+'名｜原始平均 '+q.raw.toFixed(2)+'/5｜有效評分 '+q.scoreN+' 筆'
     ));
     const observation=document.createElement('td');observation.className='deep-observation';
-    const proposalNote=document.createElement('p');proposalNote.textContent=deepCategoryInsight(p,'提案');observation.appendChild(proposalNote);
-    const questionNote=document.createElement('p');questionNote.textContent=deepCategoryInsight(q,'質詢');observation.appendChild(questionNote);
+    const proposalNote=document.createElement('p');proposalNote.textContent=deepCategoryInsight(p,'正式提案',name);observation.appendChild(proposalNote);
+    const questionNote=document.createElement('p');questionNote.textContent=deepCategoryInsight(q,'市政質詢',name);observation.appendChild(questionNote);
     tr.appendChild(observation);body.appendChild(tr);
   });
 }
@@ -592,15 +603,15 @@ function renderRepPanel(rep){
   const potentialPriorCount=cases.filter(r=>{try{return JSON.parse(text(r['疑似相關前案'],'[]')).length>0;}catch(e){return false;}}).length;
   const summaryText=value=>text(value).replace(/<[^>]*>/g,'');
   const primary=[
-    ['參與紀錄',cases.length+'筆（正式提案 '+ps+'｜市政質詢 '+qs+'）'],
-    ['主要關注議題',sorted.slice(0,3).map(x=>x[0]).join('、')||'目前沒有明確分類'],
-    ['前案線索',potentialPriorCount+'筆疑似相關前案可供核對（不代表追蹤成功）']
+    ['案件紀錄','正式提案 '+ps+' 件｜市政質詢 '+qs+' 件'],
+    ['主要關注議題',sorted.slice(0,3).map(x=>x[0]).join('、')||'目前沒有明確分類']
   ];
   const secondary=[
     ['問題界定平均',summary?summary['問題界定平均']+'/5':'尚無資料'],
     ['證據準備平均',summary?summary['證據準備平均']+'/5':'尚無資料'],
     ['具體訴求平均',summary?summary['具體訴求平均']+'/5':'尚無資料'],
     ['追問監督平均',summary?summary['追問監督平均']+'/5':'尚無資料'],
+    ['疑似相關前案數',potentialPriorCount+'筆（僅供核對，不代表追蹤成功）'],
     ['文件內前案追蹤線索數',summary?summary['文件內前案追蹤線索數']+'筆':'尚無資料'],
     ['政府回應品質平均（獨立指標）',summary?summary['政府回應平均分']+'/5':'尚無資料'],
     ['AI問政觀察',summary?summary['問政風格評析']:'目前沒有摘要']
@@ -612,7 +623,7 @@ function renderRepPanel(rep){
   });
   box.appendChild(primaryBox);
   const detail=document.createElement('details');detail.className='summary-secondary';
-  const detailTitle=document.createElement('summary');detailTitle.textContent='展開評分指標與AI補充觀察';detail.appendChild(detailTitle);
+  const detailTitle=document.createElement('summary');detailTitle.textContent='展開評分、前案線索與AI觀察';detail.appendChild(detailTitle);
   const detailBody=document.createElement('div');detailBody.style.marginTop='9px';
   secondary.forEach(([label,value])=>{
     const p=document.createElement('p');const b=document.createElement('strong');
@@ -635,6 +646,7 @@ function applyFilters(){
     if(target){$('repFilter').value='';$('typeFilter').value='';$('searchInput').value='';$('sortFilter').value='desc';sharedCaseResolved=true;}
   }
   const rep=$('repFilter').value,type=$('typeFilter').value,sort=$('sortFilter').value,keyword=normalizeSearch($('searchInput').value.trim());
+  $('overviewKpis').classList.toggle('hidden',Boolean(rep));
   const list=records.filter(r=>{
     const names=repsOf(r);
     if(rep&&!names.includes(rep))return false;
