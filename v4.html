@@ -132,6 +132,20 @@ footer{max-width:1180px;margin:auto;padding:0 16px 35px;color:var(--muted);font-
 .change-choice{min-height:44px;white-space:nowrap;border:1.5px solid var(--compare-border)!important}
 @media(max-width:900px){.compare-toolbar{grid-template-columns:1fr}.compare-controls{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.change-choice{justify-self:start}}
 @media(max-width:580px){.compare-controls{grid-template-columns:1fr}.change-choice{width:100%;white-space:normal}}
+
+/* 深色預設介面：提高資訊區塊的層次與對比 */
+:root[data-theme="dark"]{--paper:#0e151c;--card:#1b2731;--field:#243540;--soft:#233440;--kpi:#20303b;--line:#536a78;--muted:#c2d0da;--blue:#87d7ee;--proposal-bg:#1c302b;--question-bg:#1d2d3d}
+:root[data-theme="dark"] .panel,:root[data-theme="dark"] .chart-panel{border-color:#536a78;box-shadow:0 8px 24px rgba(0,0,0,.14)}
+:root[data-theme="dark"] .compare-modal .compare-toolbar{background:#223744;border-color:#668494}
+:root[data-theme="dark"] .compare-modal .compare-detail,:root[data-theme="dark"] .compare-modal .deep-highlight{background:#223541;border-color:#668494}
+:root[data-theme="dark"] .compare-modal .compare-explainer{background:#284654;color:#f1f7fa}
+:root[data-theme="dark"] .compare-modal .chart-panel{background:#1a2a34}
+:root[data-theme="dark"] .case-card{border-top:1px solid #435e6c;border-right:1px solid #435e6c;border-bottom:1px solid #435e6c}
+.role-note{font-size:.84rem;line-height:1.6;padding:10px 12px;border-left:3px solid var(--gold);background:var(--soft);border-radius:6px}
+.summary-footnote{font-size:.76rem!important;line-height:1.5;color:var(--muted);border-top:1px solid var(--line);padding-top:9px;margin-top:13px!important}
+.topic-status{padding:7px 10px;border:1px solid var(--blue);border-radius:7px;font-size:.82rem;background:var(--soft);margin:6px 0}
+#topicChart{cursor:pointer}
+@media(prefers-reduced-motion:reduce){.choice-card{transition:none}}
 </style>
 </head>
 <body>
@@ -700,14 +714,13 @@ function renderOverview(){
  const stats=aggregateByRep();$('repCount').textContent='20';const seen=new Set();records.forEach(r=>repsOf(r).forEach(n=>seen.add(n)));const coverage=REPRESENTATIVE_ROSTER.filter(n=>[...seen].some(s=>s===n||s.replace('主席','').replace('副主席','')===n.replace('主席','').replace('副主席',''))).length;$('repCoverage').textContent=coverage+' / 20';$('noRecordCount').textContent=(20-coverage).toString();
 }
 function renderRepPanel(rep){
-  if(!rep){$('repPanel').classList.add('hidden');if(chart){chart.destroy();chart=null;}if(repRadarChart){repRadarChart.destroy();repRadarChart=null;}return;}
+  if(!rep){selectedTopic=null;$('repPanel').classList.add('hidden');if(chart){chart.destroy();chart=null;}if(repRadarChart){repRadarChart.destroy();repRadarChart=null;}return;}
   const cases=records.filter(r=>repsOf(r).includes(rep));
   const ps=cases.filter(r=>caseType(r)==='提案').length, qs=cases.length-ps;
   const scores=cases.map(weightedCaseScore).filter(Boolean);
   const avg=scores.length?Number((scores.reduce((a,b)=>a+b.score,0)/scores.length).toFixed(2)):null;
   const cats={};cases.forEach(r=>{const tags=text(r['歸納大分類']||r['分類標籤'],'綜合行政與人事').split(/[,，、]/);tags.forEach(t=>{t=t.trim();if(t)cats[t]=(cats[t]||0)+1;});});
   const sorted=Object.entries(cats).sort((a,b)=>b[1]-a[1]).slice(0,8);
- selectedTopic=null;
   $('repPanel').classList.remove('hidden');$('repHeading').textContent=rep+'｜問政紀錄概況';
   $('repP').textContent=ps.toLocaleString();$('repQ').textContent=qs.toLocaleString();$('repAvg').textContent=avg===null?'無資料':avg.toFixed(2)+' / 5';
   $('repIssues').textContent=sorted.slice(0,2).map(x=>x[0]).join('、')||'無資料';
@@ -744,8 +757,9 @@ function renderRepPanel(rep){
   });
   detail.appendChild(detailBody);box.appendChild(detail);
  const note=document.createElement('p');note.className='summary-footnote';note.textContent='案件數量只呈現可見議事紀錄，不直接代表問政品質或實際成效。';box.appendChild(note);
+  const topicStatus=$('topicFilterStatus');topicStatus.classList.toggle('hidden',!selectedTopic);if(selectedTopic)topicStatus.textContent='已選擇「'+selectedTopic+'」：下方案件清單已篩選。再次點選同一議題可取消。';
   const ctx=$('topicChart').getContext('2d');if(chart)chart.destroy();
-  chart=new Chart(ctx,{type:'doughnut',data:{labels:sorted.map(x=>x[0]),datasets:[{data:sorted.map(x=>x[1]),backgroundColor:['#176b87','#187f72','#d69b3d','#8a6bb8','#5a8dba','#c76d52','#6c9b78','#a0aab2'],borderWidth:2,borderColor:chartGridColor(),offset:sorted.map(()=>0)}]},options:{responsive:true,maintainAspectRatio:false,onClick:(evt,elements)=>{if(elements.length)toggleTopicFilter(sorted[elements[0].index][0]);},plugins:{legend:{position:'bottom',onClick:(evt,legendItem)=>toggleTopicFilter(legendItem.text),labels:{color:chartTextColor()}},tooltip:{callbacks:{label:c=>`${c.label}：${c.raw}筆（點擊篩選案件）`}}}}});
+  chart=new Chart(ctx,{type:'doughnut',data:{labels:sorted.map(x=>x[0]),datasets:[{data:sorted.map(x=>x[1]),backgroundColor:['#176b87','#187f72','#d69b3d','#8a6bb8','#5a8dba','#c76d52','#6c9b78','#a0aab2'],borderWidth:2,borderColor:chartGridColor(),offset:sorted.map(([label])=>label===selectedTopic?18:0)}]},options:{responsive:true,maintainAspectRatio:false,onClick:(evt,elements)=>{if(elements.length)toggleTopicFilter(sorted[elements[0].index][0]);},plugins:{legend:{position:'bottom',onClick:(evt,legendItem)=>toggleTopicFilter(legendItem.text),labels:{color:chartTextColor()}},tooltip:{callbacks:{label:c=>`${c.label}：${c.raw}筆（點擊篩選案件）`}}}}});
   const dimValues=DIMENSIONS.map(d=>{const vals=cases.map(r=>numericScore(r[d.key])).filter(v=>v!==null);return vals.length?Number((vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2)):null;});
   destroyChart(repRadarChart);repRadarChart=new Chart($('repRadarChart'),{type:'radar',data:{labels:DIMENSIONS.map(d=>d.label),datasets:[{label:rep+'平均分數',data:dimValues,backgroundColor:'rgba(23,107,135,.18)',borderColor:'#176b87',pointBackgroundColor:'#176b87',spanGaps:false}]},options:{responsive:true,maintainAspectRatio:false,scales:{r:{min:0,max:5,ticks:{stepSize:1,color:chartTextColor(),backdropColor:'transparent'},grid:{color:chartGridColor()},angleLines:{color:chartGridColor()},pointLabels:{color:chartTextColor()}}},plugins:{legend:{labels:{color:chartTextColor()}},tooltip:{callbacks:{label:c=>c.raw===null?'未評估':`${c.dataset.label}：${c.raw} / 5`}}}}});
 }
@@ -787,7 +801,8 @@ function applyFilters(){
   if(requestedCaseKey&&!records.some(r=>caseShareKey(r)===requestedCaseKey))$('count').textContent+='｜分享連結中的案件識別碼未能匹配，可能資料已更新或連結有誤。';
   renderCards(list);renderRepPanel(rep);
 }
-['repFilter','typeFilter','sortFilter'].forEach(id=>$(id).addEventListener('change',applyFilters));
+$('repFilter').addEventListener('change',()=>{selectedTopic=null;applyFilters();});
+['typeFilter','sortFilter'].forEach(id=>$(id).addEventListener('change',applyFilters));
 $('searchInput').addEventListener('input',applyFilters);
 $('clearBtn').addEventListener('click',()=>{selectedTopic=null;$('topicFilterStatus').classList.add('hidden');$('repFilter').value='';$('typeFilter').value='';$('sortFilter').value='desc';$('searchInput').value='';applyFilters();});
 function applyTheme(theme){
@@ -799,7 +814,7 @@ function applyTheme(theme){
   try{localStorage.setItem('zb-dashboard-theme',chosen);}catch(e){}
 }
 (function initTheme(){
-  let saved='light';try{saved=localStorage.getItem('zb-dashboard-theme')||'light';}catch(e){}
+  let saved='dark';try{saved=localStorage.getItem('zb-dashboard-theme')||'dark';}catch(e){}
   applyTheme(saved);
 })();
 $('openCompare').addEventListener('click',openCompareModal);
@@ -825,6 +840,9 @@ document.querySelectorAll('[data-close-info]').forEach(button=>{
 });
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeCompareModal();closeInfoModals();}});
 document.addEventListener('contextmenu',e=>e.preventDefault());
+document.addEventListener('copy',e=>e.preventDefault());
+document.addEventListener('cut',e=>e.preventDefault());
+document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&['c','x'].includes(e.key.toLowerCase()))e.preventDefault();});
 $('themeToggle').addEventListener('click',()=>{
   const current=document.documentElement.getAttribute('data-theme')||'light';
   applyTheme(current==='dark'?'light':'dark');
