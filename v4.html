@@ -107,6 +107,7 @@ footer{max-width:1180px;margin:auto;padding:0 16px 35px;color:var(--muted);font-
 .compare-controls{display:flex;align-items:center;flex-wrap:wrap;gap:8px}.compare-controls label{font-size:.84rem;color:var(--muted)}
 .compare-controls select{max-width:270px}.compare-explainer{padding:12px 14px;border-left:3px solid var(--blue);background:var(--soft);border-radius:8px;line-height:1.55;margin:12px 0 0}
 @media(max-width:700px){.choice-grid{grid-template-columns:1fr}.choice-card{min-height:85px}.compare-controls{width:100%}.compare-controls select{max-width:100%;width:100%}}
+.case-more{margin-top:12px;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:var(--soft)}.case-more summary{cursor:pointer;font-weight:650;color:var(--blue)}.case-more[open] summary{margin-bottom:10px}
 </style>
 </head>
 <body>
@@ -324,18 +325,20 @@ function renderCards(list){
     addField(card,'推動代表',repsOf(item).join('、')||'未標示');
     addField(card,'對口單位（系統推估）',item['對口單位']);
     addField(card,'地理標的',item['地理標的']);
-    addField(card,'官方承諾與決策',item['官方承諾與決策']);
+    const caseMore=document.createElement('details');caseMore.className='case-more';
+    const caseMoreTitle=document.createElement('summary');caseMoreTitle.textContent='查看監督評分、政府回應與追蹤細節';caseMore.appendChild(caseMoreTitle);
+    addField(caseMore,'官方承諾與決策',item['官方承諾與決策']);
     const depth=text(item['監督深度'],'');
-    if(depth){const comment=document.createElement('div');comment.className='comment';comment.textContent='案件內容深度評析：'+depth;card.appendChild(comment);}
+    if(depth){const comment=document.createElement('div');comment.className='comment';comment.textContent='案件內容深度評析：'+depth;caseMore.appendChild(comment);}
     const scoreFields=[['問題界定','問題界定分數'],['證據準備','證據準備分數'],['具體訴求','具體訴求分數'],['追問監督','追問監督分數']];
     const scoreGrid=document.createElement('div');scoreGrid.className='score-grid';
     scoreFields.forEach(([label,key])=>{const chip=document.createElement('div');chip.className='score-chip';const strong=document.createElement('strong');const val=text(item[key],'未評估');strong.textContent=(val==='未評估'?'未評估':val+' / 5');chip.append(strong,document.createTextNode(label));scoreGrid.appendChild(chip);});
-    card.appendChild(scoreGrid);
+    caseMore.appendChild(scoreGrid);
     const follow=text(item['前案追蹤狀態'],'文件不足判斷');
     const gov=text(item['政府回應品質分數'],'未評估');
-    const tracking=document.createElement('div');tracking.className='score-note';tracking.textContent=`文件內追蹤線索（AI判讀）：${follow}｜資料庫日期比對：${text(item['資料庫前案比對結果'],'尚未執行全資料庫比對')}｜政府回應品質（獨立指標，不計入代表分數）：${gov==='未評估'?'未評估':gov+' / 5'}`;card.appendChild(tracking);
+    const tracking=document.createElement('div');tracking.className='score-note';tracking.textContent=`文件內追蹤線索（AI判讀）：${follow}｜資料庫日期比對：${text(item['資料庫前案比對結果'],'尚未執行全資料庫比對')}｜政府回應品質（獨立指標，不計入代表分數）：${gov==='未評估'?'未評估':gov+' / 5'}`;caseMore.appendChild(tracking);
     const rationale=text(item['評分依據與限制'],'');
-    if(rationale){const rationaleEl=document.createElement('div');rationaleEl.className='score-note';rationaleEl.textContent='評分依據／限制：'+rationale;card.appendChild(rationaleEl);}
+    if(rationale){const rationaleEl=document.createElement('div');rationaleEl.className='score-note';rationaleEl.textContent='評分依據／限制：'+rationale;caseMore.appendChild(rationaleEl);}
     let priorCases=[];
     try{priorCases=JSON.parse(text(item['疑似相關前案'],'[]'));if(!Array.isArray(priorCases))priorCases=[];}catch(e){priorCases=[];}
     if(priorCases.length){
@@ -343,8 +346,9 @@ function renderCards(list){
       const heading=document.createElement('strong');heading.textContent='可能相關的較早案件（系統比對，需人工核對）';priorBox.appendChild(heading);
       const list=document.createElement('ul');list.style.paddingLeft='20px';
       priorCases.forEach(prior=>{const li=document.createElement('li');const a=document.createElement('a');a.textContent=(prior.session||'較早案件')+'：'+(prior.title||'未提供摘要')+'（'+(prior.reason||'關聯待核對')+'）';if(prior.url&&/^https?:\/\//i.test(prior.url)){a.href=prior.url;a.target='_blank';a.rel='noopener noreferrer';}else{a.href='#';a.addEventListener('click',e=>e.preventDefault());}li.appendChild(a);list.appendChild(li);});
-      priorBox.appendChild(list);card.appendChild(priorBox);
+      priorBox.appendChild(list);caseMore.appendChild(priorBox);
     }
+    card.appendChild(caseMore);
     const actions=document.createElement('div');actions.className='actions';
     actions.appendChild(makeButtonLink('查看原始文書',item['資料來源']));
     addCaseShareActions(actions,item);
