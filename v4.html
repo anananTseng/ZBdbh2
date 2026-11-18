@@ -146,6 +146,14 @@ footer{max-width:1180px;margin:auto;padding:0 16px 35px;color:var(--muted);font-
 .topic-status{padding:7px 10px;border:1px solid var(--blue);border-radius:7px;font-size:.82rem;background:var(--soft);margin:6px 0}
 #topicChart{cursor:pointer}
 @media(prefers-reduced-motion:reduce){.choice-card{transition:none}}
+
+.radar-disclosure{padding:0;overflow:hidden}
+.radar-disclosure>summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;font-weight:700;font-size:1.05rem}
+.radar-disclosure>summary::-webkit-details-marker{display:none}
+.radar-disclosure>summary::after{content:'▾';color:var(--blue);font-size:1.2rem;flex-shrink:0}
+.radar-disclosure:not([open])>summary::after{content:'▸'}
+.radar-disclosure-body{padding:0 16px 16px}
+.radar-toggle-hint{margin-left:auto;font-size:.8rem;font-weight:400;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -176,7 +184,7 @@ footer{max-width:1180px;margin:auto;padding:0 16px 35px;color:var(--muted);font-
         <p>上方可依代表、案件類型或關鍵字篩選。選擇個別代表後，頁面會顯示該代表的案件概況；選回「所有代表」或按「清除篩選」，即可回到全體資料。</p>
         <p>按「查看20席｜全部案件總體比較」，可切換品質、案件量、綜合及「深度比較（量與質）」。深度比較把正式提案與市政質詢分開看，避免總分掩蓋差異。</p>
         <p>在比較圖表中點選代表，可看分數拆解；點開「評分案例與文本依據」，可查看個案評分理由。</p>
-        <p>案件卡片下方：「複製案件網址」可貼給別人；「開啟分享」會呼叫手機或瀏覽器的分享功能；「複製後續進度查詢文字」可貼到 ChatGPT 或搜尋引擎查找最新進度。</p>
+        <p>案件卡片下方：「複製案件網址」可貼給別人；「複製後續進度查詢文字」可貼到 ChatGPT 或搜尋引擎查找最新進度。</p>
         <p>品質分數依問題界定、證據準備及具體訴求評估。樣本調整是為避免少數案件造成排名過度波動；請同時看原始平均及有效評分筆數。</p>
         <p>主席林啟賢與副主席葉信輝都有主持議事的職務，尤其口頭質詢件數不宜直接與一般代表比較。沒有收錄或無法評分，不代表一定沒有服務或追蹤。</p>
       </div>
@@ -248,7 +256,7 @@ footer{max-width:1180px;margin:auto;padding:0 16px 35px;color:var(--muted);font-
       <div><h3>案件議題分布</h3><p class="small">點擊圖表或圖例中的議題，下方案件清單會自動篩選；再點一次取消。</p><p id="topicFilterStatus" class="topic-status hidden" aria-live="polite"></p><div class="chart-wrap"><canvas id="topicChart"></canvas></div></div>
       <div class="summary-copy"><h3>資料摘要</h3><div id="repSummaryText"><p>選擇代表後顯示摘要。</p></div></div>
     </div>
-    <div class="chart-panel" style="margin-top:16px"><h3>監督品質指標與追問加分輪廓</h3><p class="small">前三項為品質核心；追問監督僅作質詢額外加分參考。各項只計入有評分案件，未評估不視為0分。</p><div class="chart-wrap"><canvas id="repRadarChart"></canvas></div></div>
+    <details id="radarDisclosure" class="chart-panel radar-disclosure" style="margin-top:16px" open><summary>監督品質指標與追問加分輪廓 <span class="radar-toggle-hint">點擊可展開／收合</span></summary><div class="radar-disclosure-body"><p class="small">前三項為品質核心；追問監督僅作質詢額外加分參考。各項只計入有評分案件，未評估不視為0分。</p><div class="chart-wrap"><canvas id="repRadarChart"></canvas></div></div></details>
     <div class="method-note"><strong>評分規則：</strong>代表監督表現以「問題界定 25%、證據準備 30%、具體訴求 45%」作為品質核心；質詢的追問監督僅作額外加分，最高 +0.30/5，不是必要條件；提案不適用追問加分。文件無法評估的品質項目不納入該案分數。政府回應品質、官員承諾及履約情形另行呈現，不直接加減代表分數。代表是否積極要求說明、期限、責任單位、書面資料或驗收方式，才反映在追問監督評分中。文件未記載後續追蹤，不代表代表沒有追蹤；政府承諾也不等於已履行。分數只反映公開文件中可見的監督表現，不等於代表整體服務或案件最終成效。</div>
   </section>
 
@@ -331,21 +339,6 @@ function addCaseShareActions(actions,item){
     setTimeout(()=>copy.textContent='複製案件網址',1800);
   });
   actions.appendChild(copy);
-  const share=document.createElement('button');share.className='secondary';
-  share.textContent='開啟分享';share.title='呼叫手機或瀏覽器的分享功能；不支援時會改為複製網址';
-  share.addEventListener('click',async()=>{
-    if(!url){unavailable();return;}
-    const title=text(item['核心訴求與現況'],'竹北市民代表監督案件');
-    const shareData={title:'竹北市民代表監督｜案件分享',text:title,url};
-    if(typeof navigator.share==='function'&&window.isSecureContext){
-      try{await navigator.share(shareData);}
-      catch(e){if(e&&e.name!=='AbortError'){try{await copyPlainText(url);alert('分享功能無法使用，案件網址已複製。');}catch(err){window.prompt('請手動複製案件網址：',url);}}}
-    }else{
-      try{await copyPlainText(url);alert('此瀏覽器不支援直接分享，案件網址已複製，可貼到 LINE 或其他訊息。');}
-      catch(e){window.prompt('請手動複製案件網址：',url);}
-    }
-  });
-  actions.appendChild(share);
 }
 function renderCards(list){
   const root=$('data-container');root.replaceChildren();
