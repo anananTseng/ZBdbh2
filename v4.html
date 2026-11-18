@@ -169,7 +169,7 @@ footer{max-width:1180px;margin:auto;padding:0 16px 35px;color:var(--muted);font-
 
   <div id="compareBackdrop" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="compareTitle">
     <section class="compare-modal">
-      <div class="modal-head"><div><h2 id="compareTitle">代表監督表現｜總體比較</h2><p class="small">點選圖表中的代表，可查看分數組成、樣本數與案件依據。分數不等於代表全部服務能力。</p></div><button id="closeCompare" class="secondary" type="button">關閉</button></div>
+      <div class="modal-head"><div><h2 id="compareTitle">代表監督表現｜總體比較</h2><p class="small">先選你關心的問題，再看資料。任何單一數字都不代表全部服務表現。</p></div><button id="closeCompare" class="secondary" type="button">關閉</button></div>
       <div id="compareChoice" class="choice-screen">
 <h3>你最想知道什麼？</h3>
 <p class="small">選一個問題開始就好，之後隨時可以切換。</p>
@@ -187,12 +187,12 @@ footer{max-width:1180px;margin:auto;padding:0 16px 35px;color:var(--muted);font-
 <p id="comparePlainExplanation" class="compare-explainer" aria-live="polite"></p>
 <p id="compareTypeNotice" class="small hidden">這個比較同時包含提案與質詢，因此不套用案件類型篩選。</p>
 <section id="deepComparisonPanel" class="chart-panel hidden" style="margin-top:16px">
-        <div class="row-between"><div><h3>20席代表｜量與質深度比較</h3><p class="small">同時比較全部正式提案與市政質詢。每一類型分開計算案件量排名與品質排名；此頁固定使用全部資料，不受案件類型篩選影響。主席林啟賢與副主席葉信輝都有主持議事職務，兩人的口頭質詢件數不宜直接和一般代表比較。</p></div></div>
+        <div class="row-between"><div><h3>案件做得多，品質就比較好嗎？</h3><p class="small">同時比較全部正式提案與市政質詢。每一類型分開計算案件量排名與品質排名；此頁固定使用全部資料，不受案件類型篩選影響。主席林啟賢與副主席葉信輝都有主持議事職務，兩人的口頭質詢件數不宜直接和一般代表比較。</p></div></div>
         <div id="deepComparisonHighlights" class="deep-highlights"></div>
         <div class="deep-table-wrap"><table class="deep-table" aria-label="20席代表正式提案與市政質詢量質深度比較"><thead><tr><th>代表</th><th>正式提案｜案件量</th><th>正式提案｜品質</th><th>市政質詢｜案件量</th><th>市政質詢｜品質</th><th>交叉觀察</th></tr></thead><tbody id="deepComparisonBody"></tbody></table></div>
         <p class="small deep-method">品質分數依原有評分標準計算：問題界定25%、證據準備30%、具體訴求45%，再依有效評分案件數作樣本調整；不含質詢追問加分，避免把不同性質的指標混在一起。表內另列有效評分筆數及原始平均。案件量依資料庫中歸屬到該代表的紀錄計算，共同提案可能分別列入各提案人。主席林啟賢與副主席葉信輝都有主持議事職務，口頭質詢件數不宜直接和一般代表比較。沒有可比較評分者不排名、不以0分代替。</p>
       </section>
-      <div class="compare-layout" id="compareLayout"><div class="chart-panel"><div class="compare-chart"><canvas id="interactiveCompareChart"></canvas></div><p class="small">圖表列出完整20席，姓名不再自動略過；視窗較矮時可在比較視窗內上下捲動。點選代表可查看評分依據。品質分數為主，追問監督只作額外加分；無公開紀錄者仍列入完整名冊，但不虛構分數。</p></div>
+      <div class="compare-layout" id="compareLayout"><div class="chart-panel"><div class="compare-chart"><canvas id="interactiveCompareChart"></canvas></div><p class="small">圖表列出20席代表。點選圖表中的代表可查看案件與評分依據；沒有收錄紀錄不代表沒有服務。</p></div>
       <aside id="compareDetail" class="compare-detail"><h3>選擇一位代表</h3><p class="small">右側將說明其分數如何形成，以及哪些案件提供了評分依據。</p></aside></div>
       <details class="method-note"><summary>想知道分數怎麼算？展開評分方法</summary><p>主要看問題是否清楚（25%）、有沒有證據（30%）、要求是否具體（45%）。質詢追問最多額外加 0.30 分；提案沒有追問加分。樣本少時會調整排名分數，政府回應另行觀察。</p></details>
 </div>
@@ -413,7 +413,30 @@ function destroyChart(c){if(c)c.destroy();}
 
 let interactiveCompareChart=null;
 function closeCompareModal(){ $('compareBackdrop').classList.add('hidden'); }
-function openCompareModal(){ $('compareBackdrop').classList.remove('hidden'); renderInteractiveComparison(); }
+function openCompareModal(){
+ $('compareBackdrop').classList.remove('hidden');
+ $('compareChoice').classList.remove('hidden');
+ $('compareResults').classList.add('hidden');
+ $('compareBackdrop').querySelector('.compare-modal').scrollTop=0;
+}
+function chooseCompareMode(mode){
+ $('compareMode').value=mode;
+ $('compareChoice').classList.add('hidden');
+ $('compareResults').classList.remove('hidden');
+ renderInteractiveComparison();
+ $('compareBackdrop').querySelector('.compare-modal').scrollTop=0;
+}
+function explainCompareMode(mode){
+ const explanation={
+  volume:'這裡比較資料庫收錄的案件數量，不是誰服務得最好。共同提案可能分別計入各代表。',
+  quality:'這裡看公開文件中的問題、證據與要求是否具體。AI依文件評分，不代表完整服務能力。',
+  deep:'同時看案件數量與內容品質：案件多，品質排名不一定高；案件較少，內容也可能更具體。',
+  combined:'進階比較把不同單位的品質分數、案件數及追問加分放在一起，請分開看，不能直接相加。'
+ };
+ $('comparePlainExplanation').textContent=explanation[mode]||'';
+ $('compareType').disabled=mode==='deep';
+ $('compareTypeNotice').classList.toggle('hidden',mode!=='deep');
+}
 const REPRESENTATIVE_ROSTER=['戴佩如','彭竣志','范格菱','張美珠','曾玉菱','林維洲','陳秀玲','林祺烜','陳禹同','林啟賢主席','何宜芯','鄭建村','游雅婷','曾美琴','徐水鐘','邵啟月','葉信輝副主席','鄭慶源','曾祐宸','蔡文苑'];
 const SHRINKAGE_PRIOR_N=5; // 約五筆案件的先驗權重，抑制少量高分樣本過度拉高排名
 function comparisonStats(type){
@@ -590,6 +613,7 @@ function renderDeepComparison(){
 
 function renderInteractiveComparison(){
  const type=$('compareType').value,mode=$('compareMode').value;
+ explainCompareMode(mode);
  const deepPanel=$('deepComparisonPanel'),compareLayout=$('compareLayout');
  if(mode==='deep'){
   deepPanel.classList.remove('hidden');compareLayout.classList.add('hidden');
@@ -719,6 +743,12 @@ function applyTheme(theme){
   applyTheme(saved);
 })();
 $('openCompare').addEventListener('click',openCompareModal);
+document.querySelectorAll('[data-compare-choice]').forEach(button=>button.addEventListener('click',()=>chooseCompareMode(button.dataset.compareChoice)));
+$('changeCompareChoice').addEventListener('click',()=>{
+ $('compareResults').classList.add('hidden');
+ $('compareChoice').classList.remove('hidden');
+ $('compareBackdrop').querySelector('.compare-modal').scrollTop=0;
+});
 $('closeCompare').addEventListener('click',closeCompareModal);
 $('compareBackdrop').addEventListener('click',e=>{if(e.target===$('compareBackdrop'))closeCompareModal();});
 $('compareType').addEventListener('change',renderInteractiveComparison);
