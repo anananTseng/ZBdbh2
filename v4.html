@@ -727,7 +727,7 @@ function renderRepPanel(rep){
   const summary=summaries.find(s=>text(s['代表姓名'],'')===rep);
   const box=$('repSummaryText');box.replaceChildren();
   const potentialPriorCount=cases.filter(r=>{try{return JSON.parse(text(r['疑似相關前案'],'[]')).length>0;}catch(e){return false;}}).length;
-  const summaryText=value=>text(value).replace(/<[^>]*>/g,'');
+  const summaryText=value=>text(value).replace(/<[^>]*>/g,'').replace(/案件數量只呈現可見議事紀錄，不直接代表問政品質或實際成效。[\s]*/g,'').trim();
   const primary=[
     ['案件紀錄','正式提案 '+ps+' 件｜市政質詢 '+qs+' 件'],
     ['主要關注議題',sorted.slice(0,3).map(x=>x[0]).join('、')||'目前沒有明確分類']
