@@ -97,6 +97,16 @@ footer{max-width:1180px;margin:auto;padding:0 16px 35px;color:var(--muted);font-
 @media(max-width:800px){.compare-layout{grid-template-columns:1fr}.compare-chart{height:700px;min-height:700px}.modal-backdrop{padding:6px}.compare-modal{padding:12px;max-height:96vh}}
 @media(max-width:800px){.filter-grid{grid-template-columns:1fr 1fr}.kpis{grid-template-columns:1fr 1fr}.analysis-grid,.dashboard-grid{grid-template-columns:1fr}.cards{grid-template-columns:1fr}}
 @media(max-width:480px){.filter-grid{grid-template-columns:1fr}.panel{padding:15px}.container{padding:14px 10px 35px}.kpi .num{font-size:1.55rem}}
+
+.choice-screen{padding:16px 2px 10px}.choice-screen h3{font-size:1.25rem;margin:0 0 8px}
+.choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:16px}
+.choice-card{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:8px;min-height:108px;background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:17px;color:var(--ink);cursor:pointer}
+.choice-card:hover,.choice-card:focus-visible{border-color:var(--blue);box-shadow:0 0 0 2px var(--blue)}
+.choice-card strong{font-size:1.04rem}.choice-card span{color:var(--muted);font-size:.88rem;line-height:1.5}
+.compare-toolbar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-top:15px}
+.compare-controls{display:flex;align-items:center;flex-wrap:wrap;gap:8px}.compare-controls label{font-size:.84rem;color:var(--muted)}
+.compare-controls select{max-width:270px}.compare-explainer{padding:12px 14px;border-left:3px solid var(--blue);background:var(--soft);border-radius:8px;line-height:1.55;margin:12px 0 0}
+@media(max-width:700px){.choice-grid{grid-template-columns:1fr}.choice-card{min-height:85px}.compare-controls{width:100%}.compare-controls select{max-width:100%;width:100%}}
 </style>
 </head>
 <body>
@@ -146,7 +156,7 @@ footer{max-width:1180px;margin:auto;padding:0 16px 35px;color:var(--muted);font-
     </section>
   </div>
   <section id="overview" class="panel hidden">
-    <div class="row-between"><div><h2>全體代表監督概況｜全部案件</h2><p class="small">以全部案件作為預設比較，先看20席代表的公開監督紀錄，再點選代表檢視評分與個案依據。</p></div><button id="openCompare" class="compare-open" type="button">查看20席｜全部案件總體比較</button></div>
+    <div class="row-between"><div><h2>20席代表的公開紀錄</h2><p class="small">想知道誰做得多、內容是否具體，或數量與品質有何差別？先選你關心的問題。</p></div><button id="openCompare" class="compare-open" type="button">看看20席代表的表現</button></div>
     <div id="overviewKpis" class="kpis" style="margin-top:14px">
       <div class="kpi"><span class="num" id="totalCases">—</span><span class="label">收錄案件紀錄</span></div>
       <div class="kpi"><span class="num" id="totalQ">—</span><span class="label">市政質詢</span></div>
@@ -160,8 +170,23 @@ footer{max-width:1180px;margin:auto;padding:0 16px 35px;color:var(--muted);font-
   <div id="compareBackdrop" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="compareTitle">
     <section class="compare-modal">
       <div class="modal-head"><div><h2 id="compareTitle">代表監督表現｜總體比較</h2><p class="small">點選圖表中的代表，可查看分數組成、樣本數與案件依據。分數不等於代表全部服務能力。</p></div><button id="closeCompare" class="secondary" type="button">關閉</button></div>
-      <div class="row-between" style="margin-top:14px;gap:10px;flex-wrap:wrap"><label for="compareMode" class="small">比較指標</label><select id="compareMode" style="max-width:280px"><option value="quality">品質比較（樣本調整）</option><option value="volume">案件量／參與比較</option><option value="combined">三層綜合比較（品質・參與・追問加分）</option><option value="deep">深度比較（量與質）</option></select><label for="compareType" class="small">案件類型</label><select id="compareType" style="max-width:240px"><option value="all" selected>全部案件（首頁預設）</option><option value="質詢">市政質詢（口頭監督）</option><option value="提案">正式提案（書面評估）</option></select></div>
-      <section id="deepComparisonPanel" class="chart-panel hidden" style="margin-top:16px">
+      <div id="compareChoice" class="choice-screen">
+<h3>你最想知道什麼？</h3>
+<p class="small">選一個問題開始就好，之後隨時可以切換。</p>
+<div class="choice-grid">
+<button type="button" class="choice-card" data-compare-choice="volume"><strong>誰做了比較多案件？</strong><span>看公開紀錄中的提案與質詢數量</span></button>
+<button type="button" class="choice-card" data-compare-choice="quality"><strong>誰提出的監督內容較具體？</strong><span>看問題、證據與改善要求的品質評分</span></button>
+<button type="button" class="choice-card" data-compare-choice="deep"><strong>做得多，就一定做得好嗎？</strong><span>把案件數與品質放在一起比較（推薦先看）</span></button>
+<button type="button" class="choice-card" data-compare-choice="combined"><strong>想看完整的綜合指標</strong><span>同時看品質、參與量與追問加分</span></button>
+</div></div>
+<div id="compareResults" class="hidden">
+<div class="compare-toolbar"><button id="changeCompareChoice" class="secondary" type="button">換一個比較問題</button>
+<div class="compare-controls"><label for="compareMode">目前在看</label><select id="compareMode">
+<option value="volume">誰做了比較多案件？</option><option value="quality">誰提出的監督內容較具體？</option><option value="deep">做得多，就一定做得好嗎？</option><option value="combined">完整綜合指標（進階）</option>
+</select><label for="compareType">只看哪類案件？</label><select id="compareType"><option value="all">全部案件</option><option value="質詢">市政質詢</option><option value="提案">正式提案</option></select></div></div>
+<p id="comparePlainExplanation" class="compare-explainer" aria-live="polite"></p>
+<p id="compareTypeNotice" class="small hidden">這個比較同時包含提案與質詢，因此不套用案件類型篩選。</p>
+<section id="deepComparisonPanel" class="chart-panel hidden" style="margin-top:16px">
         <div class="row-between"><div><h3>20席代表｜量與質深度比較</h3><p class="small">同時比較全部正式提案與市政質詢。每一類型分開計算案件量排名與品質排名；此頁固定使用全部資料，不受案件類型篩選影響。主席林啟賢與副主席葉信輝都有主持議事職務，兩人的口頭質詢件數不宜直接和一般代表比較。</p></div></div>
         <div id="deepComparisonHighlights" class="deep-highlights"></div>
         <div class="deep-table-wrap"><table class="deep-table" aria-label="20席代表正式提案與市政質詢量質深度比較"><thead><tr><th>代表</th><th>正式提案｜案件量</th><th>正式提案｜品質</th><th>市政質詢｜案件量</th><th>市政質詢｜品質</th><th>交叉觀察</th></tr></thead><tbody id="deepComparisonBody"></tbody></table></div>
@@ -169,7 +194,8 @@ footer{max-width:1180px;margin:auto;padding:0 16px 35px;color:var(--muted);font-
       </section>
       <div class="compare-layout" id="compareLayout"><div class="chart-panel"><div class="compare-chart"><canvas id="interactiveCompareChart"></canvas></div><p class="small">圖表列出完整20席，姓名不再自動略過；視窗較矮時可在比較視窗內上下捲動。點選代表可查看評分依據。品質分數為主，追問監督只作額外加分；無公開紀錄者仍列入完整名冊，但不虛構分數。</p></div>
       <aside id="compareDetail" class="compare-detail"><h3>選擇一位代表</h3><p class="small">右側將說明其分數如何形成，以及哪些案件提供了評分依據。</p></aside></div>
-      <div class="method-note"><strong>評分規則摘要：</strong>提案與質詢均以問題界定（25%）、證據準備（30%）、具體訴求（45%）為品質核心；質詢的追問監督僅作額外加分（最高 +0.30/5），不是必要條件。提案不適用追問加分。官員承諾與政府回覆品質獨立呈現，不加減代表分數。資料未載明，不推定未做。</div>
+      <details class="method-note"><summary>想知道分數怎麼算？展開評分方法</summary><p>主要看問題是否清楚（25%）、有沒有證據（30%）、要求是否具體（45%）。質詢追問最多額外加 0.30 分；提案沒有追問加分。樣本少時會調整排名分數，政府回應另行觀察。</p></details>
+</div>
     </section>
   </div>
   <section id="repPanel" class="panel hidden">
