@@ -108,6 +108,30 @@ footer{max-width:1180px;margin:auto;padding:0 16px 35px;color:var(--muted);font-
 .compare-controls select{max-width:270px}.compare-explainer{padding:12px 14px;border-left:3px solid var(--blue);background:var(--soft);border-radius:8px;line-height:1.55;margin:12px 0 0}
 @media(max-width:700px){.choice-grid{grid-template-columns:1fr}.choice-card{min-height:85px}.compare-controls{width:100%}.compare-controls select{max-width:100%;width:100%}}
 .case-more{margin-top:12px;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:var(--soft)}.case-more summary{cursor:pointer;font-weight:650;color:var(--blue)}.case-more[open] summary{margin-bottom:10px}
+
+/* 比較視窗：清楚分層與更易辨識的框線 */
+:root{--compare-border:#b8cbd7;--compare-surface:#f0f6fa;--compare-emphasis:#dceef5;--compare-title:#123a51}
+:root[data-theme="dark"]{--compare-border:#617887;--compare-surface:#202f39;--compare-emphasis:#263f4e;--compare-title:#e5f5fb}
+.compare-modal{border:2px solid var(--compare-border)}
+.compare-modal .modal-head{border-bottom:2px solid var(--compare-border)}
+.compare-modal .chart-panel,.compare-modal .compare-detail,.compare-modal .deep-highlight,.compare-modal .deep-table-wrap{border:1.5px solid var(--compare-border);background:var(--card)}
+.compare-modal .deep-highlight,.compare-modal .compare-detail{background:var(--compare-surface)}
+.compare-modal .deep-table th{background:var(--compare-emphasis);color:var(--compare-title)}
+.compare-modal .deep-table th,.compare-modal .deep-table td{border-bottom-color:var(--compare-border)}
+.compare-modal .compare-explainer{background:var(--compare-emphasis);border-left:4px solid var(--blue);color:var(--ink)}
+.compare-modal .choice-card{border:1.5px solid var(--compare-border);background:var(--compare-surface)}
+.compare-modal .choice-card:hover,.compare-modal .choice-card:focus-visible{border-color:var(--blue)}
+.compare-toolbar{display:grid;grid-template-columns:1fr auto;gap:12px 20px;align-items:end;margin-top:16px;padding:16px;background:var(--compare-surface);border:1.5px solid var(--compare-border);border-radius:12px}
+.compare-toolbar-heading{grid-column:1/-1;display:flex;gap:12px;align-items:baseline;flex-wrap:wrap}
+.compare-toolbar-heading strong{color:var(--compare-title);font-size:1.02rem}
+.compare-toolbar-heading span{font-size:.84rem;color:var(--muted)}
+.compare-controls{display:grid;grid-template-columns:minmax(240px,1.6fr) minmax(180px,1fr);gap:12px;min-width:0}
+.compare-field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.compare-field label{font-size:.86rem;font-weight:650;color:var(--ink)}
+.compare-field select{max-width:none;width:100%;min-height:44px;border:1.5px solid var(--compare-border);background:var(--card);color:var(--ink)}
+.change-choice{min-height:44px;white-space:nowrap;border:1.5px solid var(--compare-border)!important}
+@media(max-width:900px){.compare-toolbar{grid-template-columns:1fr}.compare-controls{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.change-choice{justify-self:start}}
+@media(max-width:580px){.compare-controls{grid-template-columns:1fr}.change-choice{width:100%;white-space:normal}}
 </style>
 </head>
 <body>
@@ -181,10 +205,9 @@ footer{max-width:1180px;margin:auto;padding:0 16px 35px;color:var(--muted);font-
 <button type="button" class="choice-card" data-compare-choice="combined"><strong>想看完整的綜合指標</strong><span>同時看品質、參與量與追問加分</span></button>
 </div></div>
 <div id="compareResults" class="hidden">
-<div class="compare-toolbar"><button id="changeCompareChoice" class="secondary" type="button">換一個比較問題</button>
-<div class="compare-controls"><label for="compareMode">目前在看</label><select id="compareMode">
+<div class="compare-toolbar"><div class="compare-toolbar-heading"><strong>比較設定</strong><span>可隨時更換想看的內容</span></div><div class="compare-controls"><div class="compare-field"><label for="compareMode">想比較什麼？</label><select id="compareMode">
 <option value="volume">誰做了比較多案件？</option><option value="quality">誰提出的監督內容較具體？</option><option value="deep">做得多，就一定做得好嗎？</option><option value="combined">完整綜合指標（進階）</option>
-</select><label for="compareType">只看哪類案件？</label><select id="compareType"><option value="all">全部案件</option><option value="質詢">市政質詢</option><option value="提案">正式提案</option></select></div></div>
+</select></div><div class="compare-field"><label for="compareType">案件範圍</label><select id="compareType"><option value="all">全部案件</option><option value="質詢">市政質詢</option><option value="提案">正式提案</option></select></div></div><button id="changeCompareChoice" class="secondary change-choice" type="button">重新選擇關心的問題</button></div>
 <p id="comparePlainExplanation" class="compare-explainer" aria-live="polite"></p>
 <p id="compareTypeNotice" class="small hidden">這個比較同時包含提案與質詢，因此不套用案件類型篩選。</p>
 <section id="deepComparisonPanel" class="chart-panel hidden" style="margin-top:16px">
