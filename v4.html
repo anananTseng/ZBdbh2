@@ -231,7 +231,7 @@ footer{max-width:1180px;margin:auto;padding:0 16px 35px;color:var(--muted);font-
       <div class="kpi"><span class="num" id="repIssues">—</span><span class="label">主要關注議題</span></div>
     </div>
     <div class="analysis-grid">
-      <div><h3>案件議題分布</h3><div class="chart-wrap"><canvas id="topicChart"></canvas></div></div>
+      <div><h3>案件議題分布</h3><p class="small">點擊圖表或圖例中的議題，下方案件清單會自動篩選；再點一次取消。</p><p id="topicFilterStatus" class="topic-status hidden" aria-live="polite"></p><div class="chart-wrap"><canvas id="topicChart"></canvas></div></div>
       <div class="summary-copy"><h3>資料摘要</h3><div id="repSummaryText"><p>選擇代表後顯示摘要。</p></div></div>
     </div>
     <div class="chart-panel" style="margin-top:16px"><h3>監督品質指標與追問加分輪廓</h3><p class="small">前三項為品質核心；追問監督僅作質詢額外加分參考。各項只計入有評分案件，未評估不視為0分。</p><div class="chart-wrap"><canvas id="repRadarChart"></canvas></div></div>
@@ -707,6 +707,7 @@ function renderRepPanel(rep){
   const avg=scores.length?Number((scores.reduce((a,b)=>a+b.score,0)/scores.length).toFixed(2)):null;
   const cats={};cases.forEach(r=>{const tags=text(r['歸納大分類']||r['分類標籤'],'綜合行政與人事').split(/[,，、]/);tags.forEach(t=>{t=t.trim();if(t)cats[t]=(cats[t]||0)+1;});});
   const sorted=Object.entries(cats).sort((a,b)=>b[1]-a[1]).slice(0,8);
+ selectedTopic=null;
   $('repPanel').classList.remove('hidden');$('repHeading').textContent=rep+'｜問政紀錄概況';
   $('repP').textContent=ps.toLocaleString();$('repQ').textContent=qs.toLocaleString();$('repAvg').textContent=avg===null?'無資料':avg.toFixed(2)+' / 5';
   $('repIssues').textContent=sorted.slice(0,2).map(x=>x[0]).join('、')||'無資料';
@@ -734,18 +735,31 @@ function renderRepPanel(rep){
     b.textContent=label+'：';p.append(b,document.createTextNode(summaryText(value)));primaryBox.appendChild(p);
   });
   box.appendChild(primaryBox);
-  const detail=document.createElement('details');detail.className='summary-secondary';
-  const detailTitle=document.createElement('summary');detailTitle.textContent='展開評分、前案線索與AI觀察';detail.appendChild(detailTitle);
+  const detail=document.createElement('details');detail.className='summary-secondary';detail.open=true;
+  const detailTitle=document.createElement('summary');detailTitle.textContent='評分、前案線索與 AI 觀察（點擊收合）';detail.appendChild(detailTitle);
   const detailBody=document.createElement('div');detailBody.style.marginTop='9px';
   secondary.forEach(([label,value])=>{
     const p=document.createElement('p');const b=document.createElement('strong');
     b.textContent=label+'：';p.append(b,document.createTextNode(summaryText(value)));detailBody.appendChild(p);
   });
   detail.appendChild(detailBody);box.appendChild(detail);
+ const note=document.createElement('p');note.className='summary-footnote';note.textContent='案件數量只呈現可見議事紀錄，不直接代表問政品質或實際成效。';box.appendChild(note);
   const ctx=$('topicChart').getContext('2d');if(chart)chart.destroy();
-  chart=new Chart(ctx,{type:'doughnut',data:{labels:sorted.map(x=>x[0]),datasets:[{data:sorted.map(x=>x[1]),backgroundColor:['#176b87','#187f72','#d69b3d','#8a6bb8','#5a8dba','#c76d52','#6c9b78','#a0aab2'],borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:chartTextColor()}},tooltip:{callbacks:{label:c=>`${c.label}：${c.raw}筆`}}}}});
+  chart=new Chart(ctx,{type:'doughnut',data:{labels:sorted.map(x=>x[0]),datasets:[{data:sorted.map(x=>x[1]),backgroundColor:['#176b87','#187f72','#d69b3d','#8a6bb8','#5a8dba','#c76d52','#6c9b78','#a0aab2'],borderWidth:2,borderColor:chartGridColor(),offset:sorted.map(()=>0)}]},options:{responsive:true,maintainAspectRatio:false,onClick:(evt,elements)=>{if(elements.length)toggleTopicFilter(sorted[elements[0].index][0]);},plugins:{legend:{position:'bottom',onClick:(evt,legendItem)=>toggleTopicFilter(legendItem.text),labels:{color:chartTextColor()}},tooltip:{callbacks:{label:c=>`${c.label}：${c.raw}筆（點擊篩選案件）`}}}}});
   const dimValues=DIMENSIONS.map(d=>{const vals=cases.map(r=>numericScore(r[d.key])).filter(v=>v!==null);return vals.length?Number((vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2)):null;});
   destroyChart(repRadarChart);repRadarChart=new Chart($('repRadarChart'),{type:'radar',data:{labels:DIMENSIONS.map(d=>d.label),datasets:[{label:rep+'平均分數',data:dimValues,backgroundColor:'rgba(23,107,135,.18)',borderColor:'#176b87',pointBackgroundColor:'#176b87',spanGaps:false}]},options:{responsive:true,maintainAspectRatio:false,scales:{r:{min:0,max:5,ticks:{stepSize:1,color:chartTextColor(),backdropColor:'transparent'},grid:{color:chartGridColor()},angleLines:{color:chartGridColor()},pointLabels:{color:chartTextColor()}}},plugins:{legend:{labels:{color:chartTextColor()}},tooltip:{callbacks:{label:c=>c.raw===null?'未評估':`${c.dataset.label}：${c.raw} / 5`}}}}});
+}
+function toggleTopicFilter(topic){
+ selectedTopic=selectedTopic===topic?null:topic;
+ if(chart){
+  chart.data.datasets[0].offset=chart.data.labels.map(label=>label===selectedTopic?18:0);
+  chart.data.datasets[0].borderWidth=chart.data.labels.map(label=>label===selectedTopic?5:2);
+  chart.update();
+ }
+ const status=$('topicFilterStatus');
+ status.classList.toggle('hidden',!selectedTopic);
+ if(selectedTopic)status.textContent='已選擇「'+selectedTopic+'」：下方案件清單已篩選。再次點選同一議題可取消。';
+ applyFilters();
 }
 function normalizeSearch(value){
   // 統一全半形，忽略空白、括號及標點差異，讓「第8次」與完整會期都能命中。
@@ -758,11 +772,13 @@ function applyFilters(){
     if(target){$('repFilter').value='';$('typeFilter').value='';$('searchInput').value='';$('sortFilter').value='desc';sharedCaseResolved=true;}
   }
   const rep=$('repFilter').value,type=$('typeFilter').value,sort=$('sortFilter').value,keyword=normalizeSearch($('searchInput').value.trim());
+ if(!rep)selectedTopic=null;
   $('overviewKpis').classList.toggle('hidden',Boolean(rep));
   const list=records.filter(r=>{
     const names=repsOf(r);
     if(rep&&!names.includes(rep))return false;
     if(type&&caseType(r)!==type)return false;
+    if(selectedTopic){const tags=text(r['歸納大分類']||r['分類標籤'],'綜合行政與人事').split(/[,，、]/).map(x=>x.trim());if(!tags.includes(selectedTopic))return false;}
     // 「屆次」欄位包含會期與日期，必須納入搜尋；其餘欄位保留原有搜尋能力。
     const hay=normalizeSearch([r['屆次'],r['檔案類別'],r['核心訴求與現況'],r['推動代表與團隊'],r['地理標的'],r['分類標籤'],r['官方承諾與決策'],r['對口單位'],r['資料來源']].map(x=>text(x,'')).join(' '));
     return !keyword||hay.includes(keyword);
@@ -773,7 +789,7 @@ function applyFilters(){
 }
 ['repFilter','typeFilter','sortFilter'].forEach(id=>$(id).addEventListener('change',applyFilters));
 $('searchInput').addEventListener('input',applyFilters);
-$('clearBtn').addEventListener('click',()=>{$('repFilter').value='';$('typeFilter').value='';$('sortFilter').value='desc';$('searchInput').value='';applyFilters();});
+$('clearBtn').addEventListener('click',()=>{selectedTopic=null;$('topicFilterStatus').classList.add('hidden');$('repFilter').value='';$('typeFilter').value='';$('sortFilter').value='desc';$('searchInput').value='';applyFilters();});
 function applyTheme(theme){
   const chosen=theme==='dark'?'dark':'light';
   document.documentElement.setAttribute('data-theme',chosen);
